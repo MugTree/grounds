@@ -1,5 +1,9 @@
 # Go app using docker with postgres
 
+- look at setting up kamal for this
+
+https://www.youtube.com/watch?v=ImqznBAzr_k
+
 ## For dev work....
 
 Assuming the database has already been created in docker desktop...
@@ -50,9 +54,9 @@ source ./load_env.sh
 docker run -d \
   --name dev-postgres \
   --restart unless-stopped \
-  -e POSTGRES_USER=$POSTGRES_USER \
-  -e POSTGRES_PASSWORD=$POSTGRES_PASSWORD \
-  -e POSTGRES_DB=$POSTGRES_DB \
+  -e POSTGRES_USER=$VT_DB_USER \
+  -e POSTGRES_PASSWORD=$VT_DB_PASSWORD \
+  -e POSTGRES_DB=$VT_DB_NAME \
   -p 5432:5432 \
   -v postgres_data:/var/lib/postgresql/data \
   postgres:16

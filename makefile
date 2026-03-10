@@ -12,8 +12,8 @@ templ:
 
 serve:
 	air \
-  --build.cmd "go build -o ./tmp/bin/app" --build.bin "./tmp/bin/app" --build.delay "100" \
-  --build.include_ext "go,env,css,js" \
+  --build.cmd "go build -o ./tmp/bin/app ./cmd/app" --build.bin "./tmp/bin/app" --build.delay "100" \
+  --build.include_ext "go,css,js" \
   --build.stop_on_error "false" \
   --misc.clean_on_exit true
 

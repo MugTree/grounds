@@ -14,11 +14,11 @@ func main() {
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		os.Getenv("POSTGRES_HOST"),
-		os.Getenv("POSTGRES_PORT"),
-		os.Getenv("POSTGRES_USER"),
-		os.Getenv("POSTGRES_PASSWORD"),
-		os.Getenv("POSTGRES_DB"),
+		os.Getenv("VT_DB_HOST"),
+		os.Getenv("VT_DB_PORT"),
+		os.Getenv("VT_DB_USER"),
+		os.Getenv("VT_DB_PASSWORD"),
+		os.Getenv("VT_DB_NAME"),
 	)
 
 	println(connStr)

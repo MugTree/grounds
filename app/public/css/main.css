@@ -1,0 +1,45 @@
+/* Blanchflower site styles */
+
+.black-bg {
+  background-color: #000000;
+}
+
+@media (min-width: 1024px) {
+  .desktop-site-logo {
+    width: 420px;
+    height: auto;
+    margin: auto;
+  }
+  .mobile-site-logo {
+    display: none;
+  }
+}
+
+@media (max-width: 1023px) {
+  .mobile-site-logo {
+    width: 190px;
+    height: auto;
+    margin: auto;
+  }
+  .desktop-site-logo {
+    display: none;
+  }
+}
+
+a {
+  text-decoration: underline;
+}
+
+a.no-dec {
+  text-decoration: none;
+}
+
+/* hp field */
+.job-description {
+  position: absolute;
+  left: -10000px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}

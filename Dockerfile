@@ -7,7 +7,7 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o server ./cmd/app
+RUN go build -o server .
 
 FROM alpine:3.19
 

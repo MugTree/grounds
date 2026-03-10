@@ -1,2 +1,3 @@
 load_env.sh
 bin
+.env

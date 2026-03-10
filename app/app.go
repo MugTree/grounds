@@ -15,12 +15,14 @@ import (
 //go:embed public/js/*.js
 var staticFS embed.FS
 
-var hashFS = hashfs.NewFS(staticFS)
+var (
+	StaticSys = hashfs.NewFS(staticFS)
+)
 
 func AppSetup(db *sqlx.DB) chi.Router {
 
 	r := chi.NewRouter()
-	r.Handle("/public/*", hashfs.FileServer(hashFS))
+	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 
@@ -38,6 +40,10 @@ func AppSetup(db *sqlx.DB) chi.Router {
 
 	return r
 
+}
+
+func StaticPath(format string, args ...any) string {
+	return "/" + StaticSys.HashName(fmt.Sprintf("public/"+format, args...))
 }
 
 func renderServerError(w http.ResponseWriter, _ *http.Request, msg string) {

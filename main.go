@@ -96,7 +96,7 @@ func runBlocking(ctx context.Context, host string, app http.Handler) error {
 		}
 	}()
 
-	fmt.Printf("Server running at http://localhost%s", host)
+	fmt.Printf("Server running at http://localhost%s", server.Addr)
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {

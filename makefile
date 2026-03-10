@@ -1,0 +1,31 @@
+lint:
+	golangci-lint run .
+
+run-tests:
+	cd www && go test -v && cd ..
+  
+format-html:
+	templ fmt ./app 
+
+templ:
+	templ generate --watch --proxy="http://localhost:8080" --open-browser=false  -v
+
+serve:
+	air \
+  --build.cmd "go build -o ./tmp/bin/app" --build.bin "./tmp/bin/app" --build.delay "100" \
+  --build.include_ext "go,env,css,js" \
+  --build.stop_on_error "false" \
+  --misc.clean_on_exit true
+
+sync_assets: 
+	air \
+  --build.cmd "templ generate --notify-proxy" \
+  --build.bin "true" \
+  --build.delay "100" \
+  --build.exclude_dir "" \
+  --build.include_dir "www,public" \
+  --build.include_ext "js,css"
+
+start-dev: 
+	make  -j3 templ serve sync_assets
+#	make -j 3  templ serve sync_assets

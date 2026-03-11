@@ -23,7 +23,7 @@ func handleHomepage(db *sqlx.DB) http.HandlerFunc {
 }
 
 type getLocSignals struct {
-	CustomerId string `json:"customer-id"`
+	CustomerId string `json:"customerId"`
 }
 
 func handleGetLocation(db *sqlx.DB) http.HandlerFunc {
@@ -38,6 +38,7 @@ func handleGetLocation(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		GetLocation(locations).Render(r.Context(), w)
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(GetLocation(locations))
 	}
 }

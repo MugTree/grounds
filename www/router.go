@@ -45,7 +45,7 @@ func AppSetup(db *sqlx.DB) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 	r.Get("/", handleHomepage(db))
-	r.Get("/customer-location/{id}", handleGetLocation(db))
+	r.Get("/customer-location/", handleGetLocation(db))
 	return r
 }
 

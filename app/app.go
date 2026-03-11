@@ -33,8 +33,10 @@ func AppSetup(db *sqlx.DB) chi.Router {
 			return
 		}
 
-		w.WriteHeader(200)
-		w.Write([]byte("hey there" + fmt.Sprintf("building: %v", buildings[0].Name)))
+		Home(buildings).Render(r.Context(), w)
+	})
+
+	r.Get("/building/{id}", func(w http.ResponseWriter, r *http.Request) {
 
 	})
 

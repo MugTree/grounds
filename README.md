@@ -35,3 +35,9 @@ Then its just a case of using make and air etc to run the app templ hot reload e
 ```shell
 docker compose up --build
 ```
+
+### to run seeds
+
+```bash
+goose -dir ./data/seeds -no-versioning up
+```

@@ -9,3 +9,5 @@ require (
 	github.com/lib/pq v1.11.2
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
+
+require github.com/a-h/templ v0.3.1001 // indirect

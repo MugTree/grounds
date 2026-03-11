@@ -33,23 +33,50 @@ templ HomePage(customers []Customer) {
 	}
 }
 
-templ GetLocationsByCustomer(locations []locationByCustomer) {
+templ GetLocationsByCustomer(lbc []locationByCustomer) {
 	<section id="locations">
-		if len(locations) > 0 {
-			<h2>Choose a { locations[0].CustomerName } location</h2>
-			<form method="POST" action={ templ.URL("/new-visit/") }>
-				<select id="locations-sel">
+		if len(lbc) > 0 {
+			<h2>Choose a { lbc[0].CustomerName } location</h2>
+			<form action="/new-visit-create/" method="get">
+				<select id="locations-sel" name="location">
 					<option selected>Locations...</option>
-					for _, l := range locations {
+					for _, l := range lbc {
 						<option value={ l.LocationId }>{  } { l.LocationName }</option>
 					}
 				</select>
-				<button type="submit">Create new</button>
+				<button type="submit">New visit</button>
 			</form>
 		} else {
 			<p>No locations configured </p>
 		}
 	</section>
+}
+
+templ NewVisitCreate(lbc locationByCustomer) {
+	@Layout() {
+		<div data-signals="{starting: true}">
+			<div id="stage-1" data-show="$starting">
+				<p>New visit to { lbc.CustomerName } { lbc.LocationName }</p>
+				<input type="hidden" name="location_id" value={ lbc.LocationId } data-bind:location-id/>
+				<div>Notes</div>
+				<textarea name="notes" id="notes" data-bind:notes></textarea>
+				<button data-on:click="$starting = !$starting">Submit</button>
+			</div>
+			<div id="stage-2" data-show="!$starting" style="display: none">
+				<p>Stage 2</p>
+				<p>Your note is...</p>
+				<div data-text="$notes"></div>
+				<button data-on:click="@post('/new-visit-confim/')">Confirm</button>
+				<button data-on:click="$starting = !$starting">Fix</button>
+			</div>
+		</div>
+	}
+}
+
+templ NewVisitConfirm(lbc locationByCustomer) {
+	@Layout() {
+		<p>New visit to { lbc.CustomerName } { lbc.LocationName }</p>
+	}
 }
 
 templ ErrorPage() {

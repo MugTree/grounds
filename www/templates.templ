@@ -19,30 +19,37 @@ templ Layout() {
 templ HomePage(customers []Customer) {
 	@Layout() {
 		if len(customers) > 0 {
-			<select id="customers" data-on:change="@get('/customer-location/')" data-bind:customer-id>
-				<option selected>Choose a customer...</option>
-				for _, c := range customers {
-					<option value={ c.Id }>{ c.Name }</option>
-				}
-			</select>
+			<section>
+				<h1>Choose a customer</h1>
+				<select id="customers-sel" data-on:change="@get('/customer-location/')" data-bind:customer-id>
+					<option selected>Customers...</option>
+					for _, c := range customers {
+						<option value={ c.Id }>{ c.Name }</option>
+					}
+				</select>
+			</section>
 			<section id="locations">...</section>
 		}
 	}
 }
 
-templ GetLocation(locations []Location) {
-	if len(locations) > 0 {
-		<select id="locations">
-			<option selected>Choose a location...</option>
-			for _, l := range locations {
-				<option value={ l.Id }>{ l.Name }</option>
-			}
-		</select>
-	} else {
-		<section id="locations">
-			<p>No locations configured :(</p>
-		</section>
-	}
+templ GetLocationsByCustomer(locations []locationByCustomer) {
+	<section id="locations">
+		if len(locations) > 0 {
+			<h2>Choose a { locations[0].CustomerName } location</h2>
+			<form method="POST" action={ templ.URL("/new-visit/") }>
+				<select id="locations-sel">
+					<option selected>Locations...</option>
+					for _, l := range locations {
+						<option value={ l.LocationId }>{  } { l.LocationName }</option>
+					}
+				</select>
+				<button type="submit">Create new</button>
+			</form>
+		} else {
+			<p>No locations configured </p>
+		}
+	</section>
 }
 
 templ ErrorPage() {

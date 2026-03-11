@@ -26,19 +26,36 @@ type getLocSignals struct {
 	CustomerId string `json:"customerId"`
 }
 
+type locationByCustomer struct {
+	LocationName string `db:"location_name"`
+	CustomerName string `db:"customer_name"`
+	LocationId   string `db:"location_id"`
+}
+
 func handleGetLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		signals := getLocSignals{}
 		datastar.ReadSignals(r, &signals)
-		locations := []Location{}
+		lbc := []locationByCustomer{}
 
-		if err := db.Select(&locations, `SELECT * FROM location WHERE customer_id = $1;`, signals.CustomerId); err != nil {
+		locationsByCustomerSql :=
+			`SELECT
+    			l.name AS location_name,
+   		 		c.name AS customer_name,
+    			l.id AS location_id
+			FROM location l
+    		INNER JOIN customer c
+    		ON l.customer_id = c.id
+			WHERE c.id = $1;
+			`
+
+		if err := db.Select(&lbc, locationsByCustomerSql, signals.CustomerId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting locations - %v", err))
 			return
 		}
 
 		sse := datastar.NewSSE(w, r)
-		sse.PatchElementTempl(GetLocation(locations))
+		sse.PatchElementTempl(GetLocationsByCustomer(lbc))
 	}
 }

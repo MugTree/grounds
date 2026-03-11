@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"main/app"
+	"main/www"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
@@ -68,7 +68,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.AppSetup(db)
+			return www.AppSetup(db)
 		}
 	}
 

@@ -1,4 +1,4 @@
-package app
+package www
 
 type Building struct {
 	Id   int    `db:"id"`

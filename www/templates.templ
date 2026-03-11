@@ -1,0 +1,48 @@
+package www
+
+import "fmt"
+
+templ Layout() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Document</title>
+			<link href={ staticPath("css/main.css") } rel="stylesheet"/>
+		</head>
+		<body>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ HomePage(buildings []Building) {
+	@Layout() {
+		if len(buildings) > 0 {
+			<ul>
+				for _, v := range buildings {
+					<li><a href={ fmt.Sprintf("/building/%v", v.Id) }>{ v.Name }</a></li>
+				}
+			</ul>
+		}
+	}
+}
+
+templ JobsPage(jobs []Jobs) {
+	@Layout() {
+		if len(jobs) > 0 {
+			<ul>
+				for _, v := range jobs {
+					<li>{ v.Description }</li>
+				}
+			</ul>
+		}
+	}
+}
+
+templ ErrorPage() {
+	@Layout() {
+		<h1>500 - server error</h1>
+	}
+}

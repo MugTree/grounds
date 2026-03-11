@@ -1,0 +1,6 @@
+load_env.sh
+tmp
+log
+bin
+.env
+.DS_Store

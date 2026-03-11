@@ -1,5 +1,7 @@
 package app
 
+import "fmt"
+
 templ Layout() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -19,7 +21,19 @@ templ Home(buildings []Building) {
 		if len(buildings) > 0 {
 			<ul>
 				for _, v := range buildings {
-					<li>{ v.Name }</li>
+					<li><a href={ fmt.Sprintf("/building/%v", v.Id) }>{ v.Name }</a></li>
+				}
+			</ul>
+		}
+	}
+}
+
+templ JobsPage(jobs []Jobs) {
+	@Layout() {
+		if len(jobs) > 0 {
+			<ul>
+				for _, v := range jobs {
+					<li>{ v.Description }</li>
 				}
 			</ul>
 		}

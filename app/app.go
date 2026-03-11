@@ -38,6 +38,17 @@ func AppSetup(db *sqlx.DB) chi.Router {
 
 	r.Get("/building/{id}", func(w http.ResponseWriter, r *http.Request) {
 
+		bid := r.PathValue("id")
+
+		jobs := []Jobs{}
+
+		if err := db.Select(&jobs, `SELECT * FROM jobs WHERE building_id = $1;`, bid); err != nil {
+			renderServerError(w, r, err.Error())
+			return
+		}
+
+		JobsPage(jobs).Render(r.Context(), w)
+
 	})
 
 	return r

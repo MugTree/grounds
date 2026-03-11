@@ -5,35 +5,39 @@ import (
 	"net/http"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 func handleHomepage(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		buildings := []Building{}
+		customers := []Customer{}
 
-		if err := db.Select(&buildings, `SELECT * FROM buildings;`); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting buildings - %v", err))
+		if err := db.Select(&customers, `SELECT * FROM customer;`); err != nil {
+			renderServerError(w, r, fmt.Sprintf("sql: error getting customers - %v", err))
 			return
 		}
 
-		HomePage(buildings).Render(r.Context(), w)
+		HomePage(customers).Render(r.Context(), w)
 	}
 }
 
-func handleJobsPage(db *sqlx.DB) http.HandlerFunc {
+type getLocSignals struct {
+	CustomerId string `json:"customer-id"`
+}
+
+func handleGetLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		bid := r.PathValue("id")
+		signals := getLocSignals{}
+		datastar.ReadSignals(r, &signals)
+		locations := []Location{}
 
-		jobs := []Jobs{}
-
-		if err := db.Select(&jobs, `SELECT * FROM jobs WHERE building_id = $1;`, bid); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting jobs - %v", err))
+		if err := db.Select(&locations, `SELECT * FROM location WHERE customer_id = $1;`, signals.CustomerId); err != nil {
+			renderServerError(w, r, fmt.Sprintf("sql: error getting locations - %v", err))
 			return
 		}
 
-		JobsPage(jobs).Render(r.Context(), w)
-
+		GetLocation(locations).Render(r.Context(), w)
 	}
 }

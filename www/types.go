@@ -1,12 +1,23 @@
 package www
 
-type Building struct {
+type Customer struct {
 	Id   int    `db:"id"`
 	Name string `db:"name"`
 }
 
-type Jobs struct {
-	Id          int    `db:"id"`
-	Description string `db:"description"`
-	BuildingId  int    `db:"building_id"`
+type Employee struct {
+	Id   int    `db:"id"`
+	Name string `db:"name"`
+}
+
+type Location struct {
+	Id         int    `db:"id"`
+	Name       string `db:"name"`
+	CustomerId int    `db:"customer_id"`
+}
+
+type Visit struct {
+	Id         int `db:"id"`
+	EmployeeId int `db:"employee_id"`
+	LocationId int `db:"location_id"`
 }

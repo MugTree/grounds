@@ -41,3 +41,34 @@ docker compose up --build
 ```bash
 goose -dir ./data/seeds -no-versioning up
 ```
+
+### todo
+
+please make me a postgres compliant ddl
+with following rules
+
+- customer has one or many locations
+- visits have one operative
+- use foriegn keys if necessary
+
+## customer
+
+id,
+name
+
+## location
+
+id,
+name
+customer_id
+
+## visits
+
+id,
+location_id,
+employee_id
+
+## employee
+
+id
+name

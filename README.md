@@ -4,6 +4,8 @@
 
 https://www.youtube.com/watch?v=ImqznBAzr_k
 
+NEED TO SET UP A DOCKER ENV FILE THAT OVERRIDES ONE OF THE VARS add some logging in the container as well
+
 ## For dev work....
 
 Assuming the database has already been created in docker desktop...

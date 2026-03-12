@@ -21,3 +21,22 @@ type Visit struct {
 	EmployeeId int `db:"employee_id"`
 	LocationId int `db:"location_id"`
 }
+
+type locationByCustomer struct {
+	LocationName string `db:"location_name"`
+	CustomerName string `db:"customer_name"`
+	LocationId   string `db:"location_id"`
+}
+
+type getLocSignals struct {
+	CustomerId string `json:"customerId"`
+}
+
+type visitVM struct {
+	Date         string
+	Duration     string
+	Notes        string
+	CustomerName string
+	LocationName string
+	LocationId   string
+}

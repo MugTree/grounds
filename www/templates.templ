@@ -33,12 +33,12 @@ templ HomePage(customers []Customer) {
 	}
 }
 
-templ GetLocationsByCustomer(lbc []locationByCustomer) {
+templ LocationsByCustomerForm(lbc []locationByCustomer) {
 	<section id="locations">
 		if len(lbc) > 0 {
 			<h2>Choose a { lbc[0].CustomerName } location</h2>
-			<form action="/new-visit-create/" method="get">
-				<select id="locations-sel" name="location">
+			<form action="/new-visit/" method="post">
+				<select id="locations-sel" name="location_id">
 					<option selected>Locations...</option>
 					for _, l := range lbc {
 						<option value={ l.LocationId }>{  } { l.LocationName }</option>
@@ -52,31 +52,62 @@ templ GetLocationsByCustomer(lbc []locationByCustomer) {
 	</section>
 }
 
-templ NewVisitCreate(lbc locationByCustomer) {
+templ NewVisitStage1Form(lv visitVM) {
+	<h2>Complete the form</h2>
+	<form>
+		<input type="hidden" name="location-id" value={ lv.LocationId }/>
+		<input type="hidden" name="location-name" value={ lv.LocationName }/>
+		<input type="hidden" name="customer-name" value={ lv.CustomerName }/>
+		<label for="visit-date">Visit date: </label>
+		<input
+			type="date"
+			id="visit-date"
+			name="visit-date"
+			value={ lv.Date }
+		/>
+		<label for="visit-duration">Duration: </label>
+		<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ lv.Duration }/>
+		<label for="visit-notes">Notes:</label>
+		<textarea name="visit-notes" id="visit-notes" placeholder="notes..."></textarea>
+		<hr/>
+		<button data-on:click="@post('/create-visit/', {contentType: 'form'})">Submit</button>
+	</form>
+}
+
+templ NewVisitCreate(vm visitVM) {
 	@Layout() {
-		<div data-signals="{starting: true}">
-			<div id="stage-1" data-show="$starting">
-				<p>New visit to { lbc.CustomerName } { lbc.LocationName }</p>
-				<input type="hidden" name="location_id" value={ lbc.LocationId } data-bind:location-id/>
-				<div>Notes</div>
-				<textarea name="notes" id="notes" data-bind:notes></textarea>
-				<button data-on:click="$starting = !$starting">Submit</button>
-			</div>
-			<div id="stage-2" data-show="!$starting" style="display: none">
-				<p>Stage 2</p>
-				<p>Your note is...</p>
-				<div data-text="$notes"></div>
-				<button data-on:click="@post('/new-visit-confim/')">Confirm</button>
-				<button data-on:click="$starting = !$starting">Fix</button>
-			</div>
+		<h1>Visit to { vm.CustomerName } - { vm.LocationName } </h1>
+		<div id="visit">
+			<section id="stage1">
+				@NewVisitStage1Form(vm)
+			</section>
 		</div>
 	}
 }
 
-templ NewVisitConfirm(lbc locationByCustomer) {
-	@Layout() {
-		<p>New visit to { lbc.CustomerName } { lbc.LocationName }</p>
-	}
+templ NewVisitConfirm(vm visitVM) {
+	<div id="visit">
+		<section id="stage1" data-show="!$stage2">
+			@NewVisitStage1Form(vm)
+		</section>
+		<section id="stage2" data-show="$stage2">
+			<h2>Does this look ok?</h2>
+			<hr/>
+			<p>visit date: { vm.Date }</p>
+			<p>visit duration: { vm.Duration }</p>
+			<p>visit notes: { vm.Notes }</p>
+			<hr/>
+			<form action="/create-visit/" method="post">
+				<input type="hidden" name="location-id" value={ vm.LocationId }/>
+				<input type="hidden" name="visit-date" value={ vm.Date }/>
+				<input type="hidden" name="visit-duration" value={ vm.Duration }/>
+				<input type="hidden" name="visit-notes" value={ vm.Notes }/>
+				<input type="hidden" name="validated-confirmed" value="true"/>
+				<button type="submit">Yes</button>
+				<button type="reset" data-on:click="$stage2 = false">No</button>
+			</form>
+		</section>
+	</div>
 }
 
 templ ErrorPage() {

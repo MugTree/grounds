@@ -19,35 +19,23 @@ var (
 	StaticSys = hashfs.NewFS(staticFS)
 )
 
-// what does the app need to do
-
 // admin features
 /*
-
 	add customer
 	add location
 	add employee
-
 	show visits
 	show locations
 	show employees
-*/
-
-// front end
-/*
-
-	login
-	select location by customer
-	make visit
 */
 
 func AppSetup(db *sqlx.DB) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 	r.Get("/", handleHomepage(db))
-	r.Get("/customer-location/", handleGetLocation(db))
-	r.Get("/new-visit-create/", handleNewVisitCreate(db))
-	r.Post("/new-visit-confim/", handleNewVisitConfirm(db))
+	r.Get("/customer-location/", handlePatchLocation(db))
+	r.Post("/new-visit/", handleNewVisit(db))
+	r.Post("/create-visit/", handleCreateVisit(db))
 	return r
 }
 

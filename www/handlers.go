@@ -3,6 +3,7 @@ package www
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
@@ -22,95 +23,90 @@ func handleHomepage(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-type getLocSignals struct {
-	CustomerId string `json:"customerId"`
-}
-
-type locationByCustomer struct {
-	LocationName string `db:"location_name"`
-	CustomerName string `db:"customer_name"`
-	LocationId   string `db:"location_id"`
-}
-
-func handleGetLocation(db *sqlx.DB) http.HandlerFunc {
+func handlePatchLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		signals := getLocSignals{}
 		datastar.ReadSignals(r, &signals)
 		lbc := []locationByCustomer{}
 
-		locationsByCustomerSql :=
-			`SELECT
-    			l.name AS location_name,
-   		 		c.name AS customer_name,
-    			l.id AS location_id
-			FROM location l
-    		INNER JOIN customer c
-    		ON l.customer_id = c.id
-			WHERE c.id = $1;
-			`
-
-		if err := db.Select(&lbc, locationsByCustomerSql, signals.CustomerId); err != nil {
+		if err := db.Select(&lbc, Queries.LocationsByCustomerId, signals.CustomerId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
 			return
 		}
 
 		sse := datastar.NewSSE(w, r)
-		sse.PatchElementTempl(GetLocationsByCustomer(lbc))
+		sse.PatchElementTempl(LocationsByCustomerForm(lbc))
 	}
 }
 
-func handleNewVisitCreate(db *sqlx.DB) http.HandlerFunc {
+func handleNewVisit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		locationId := r.URL.Query().Get("location")
+		locationId := r.FormValue("location_id")
 
 		loc := locationByCustomer{}
 
-		locationSql := `
-			SELECT 
-				l.name AS location_name, 
-				l.id AS location_id, 
-				c.name customer_name 
-			FROM location l 
-			INNER JOIN 
-				customer c ON c.id = l.customer_id 
-			WHERE l.id = $1;`
-
-		if err := db.Get(&loc, locationSql, locationId); err != nil {
+		if err := db.Get(&loc, Queries.LocationById, locationId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
 
-		NewVisitCreate(loc).Render(r.Context(), w)
+		vm := visitVM{
+			Date:         time.Now().Format("2006-01-02"),
+			Duration:     "60",
+			CustomerName: loc.CustomerName,
+			LocationName: loc.LocationName,
+			LocationId:   loc.LocationId,
+		}
+
+		NewVisitCreate(vm).Render(r.Context(), w)
 	}
 }
 
-type visitConfirmSignals struct {
-	LocationId string `json:"locationId"`
-	Notes      string `json:"notes"`
-}
-
-func handleNewVisitConfirm(db *sqlx.DB) http.HandlerFunc {
+func handleCreateVisit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		vcs := visitConfirmSignals{}
-		datastar.ReadSignals(r, &vcs)
+		date := r.FormValue("visit-date")
+		duration := r.FormValue("visit-duration")
+		notes := r.FormValue("visit-notes")
+		locationId := r.FormValue("location-id")
+		locationName := r.FormValue("location-name")
+		customerName := r.FormValue("customer-name")
+		validatedConfirmed := r.FormValue("validated-confirmed")
 
-		res, err := db.Exec(`INSERT INTO visits (location_id, employee_id) VALUES ($1, $2);`, vcs.LocationId, 1)
-		if err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
+		var isValid = true
+
+		if isValid && validatedConfirmed == "true" {
+			res, err := db.Exec(`INSERT INTO visits (location_id, employee_id) VALUES ($1, $2);`, locationId, 1)
+
+			if err != nil {
+				renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
+				return
+			}
+
+			rows, _ := res.RowsAffected()
+			if rows != 1 {
+				renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
+				return
+			}
+
+			http.Redirect(w, r, "/", 303)
 			return
 		}
 
-		rows, _ := res.RowsAffected()
-		if rows != 1 {
-			renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
-			return
+		vm := visitVM{
+			Date:         date,
+			Duration:     duration,
+			Notes:        notes,
+			LocationId:   locationId,
+			LocationName: locationName,
+			CustomerName: customerName,
 		}
 
-		w.WriteHeader(200)
-		fmt.Fprintf(w, "location id: %v - notes: %v", vcs.LocationId, vcs.Notes)
+		sse := datastar.NewSSE(w, r)
+		sse.PatchSignals([]byte(`{"stage2": true}`))
+		sse.PatchElementTempl(NewVisitConfirm(vm))
 
 	}
 }

@@ -15,7 +15,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func main() {
@@ -23,7 +22,7 @@ func main() {
 	defer stop()
 
 	if err := run(ctx); err != nil {
-		log.Fatal(err)
+		fmt.Println(err)
 	}
 }
 
@@ -36,16 +35,18 @@ func run(parent context.Context) error {
 	dbUser := mustEnv("VT_DB_USER")
 	dbPassword := mustEnv("VT_DB_PASSWORD")
 	dbName := mustEnv("VT_DB_NAME")
-	appLog := mustEnv("VT_APP_LOG")
+	//appLog := mustEnv("VT_APP_LOG")
 	appPort := mustEnv("VT_APP_PORT")
 
-	log.SetOutput(&lumberjack.Logger{
-		Filename:   appLog,
-		MaxSize:    50, // MB
-		MaxBackups: 5,
-		MaxAge:     30, // days
-		Compress:   true,
-	})
+	fmt.Println(dbHost)
+
+	// log.SetOutput(&lumberjack.Logger{
+	// 	Filename:   appLog,
+	// 	MaxSize:    50, // MB
+	// 	MaxBackups: 5,
+	// 	MaxAge:     30, // days
+	// 	Compress:   true,
+	// })
 
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",

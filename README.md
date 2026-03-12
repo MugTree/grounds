@@ -42,6 +42,14 @@ docker compose up --build
 goose -dir ./data/seeds -no-versioning up
 ```
 
+## When building the app container
+
+Always rebuild when code changes:
+
+```bash
+docker compose up -d --build
+```
+
 ### todo
 
 please make me a postgres compliant ddl

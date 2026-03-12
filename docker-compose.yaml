@@ -1,6 +1,19 @@
 version: "3.9"
 
 services:
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "${CADDY_HTTP_PORT}:${CADDY_HTTP_PORT}" # Host:Container
+      # - "${CADDY_HTTPS_PORT}:${CADDY_HTTPS_PORT}" # Host:Container
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+
   api:
     env_file: ".env"
     build: .
@@ -30,3 +43,5 @@ services:
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:

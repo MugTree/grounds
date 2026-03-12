@@ -3,7 +3,6 @@ package www
 import (
 	"embed"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/benbjohnson/hashfs"
@@ -47,6 +46,6 @@ func staticPath(format string, args ...any) string {
 }
 
 func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
-	log.Printf("Error: %v", msg)
+	fmt.Printf("Error: %v", msg)
 	ErrorPage().Render(r.Context(), w)
 }

@@ -14,7 +14,7 @@ func handleHomepage(db *sqlx.DB) http.HandlerFunc {
 
 		customers := []Customer{}
 
-		if err := db.Select(&customers, `SELECT * FROM customer;`); err != nil {
+		if err := db.Select(&customers, SelectCustomersSql); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting customers - %v", err))
 			return
 		}
@@ -30,7 +30,7 @@ func handlePatchLocation(db *sqlx.DB) http.HandlerFunc {
 		datastar.ReadSignals(r, &signals)
 		lbc := []locationByCustomer{}
 
-		if err := db.Select(&lbc, Queries.LocationsByCustomerId, signals.CustomerId); err != nil {
+		if err := db.Select(&lbc, SelectLocationsByCustomerIdSql, signals.CustomerId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
 			return
 		}
@@ -47,7 +47,7 @@ func handleNewVisit(db *sqlx.DB) http.HandlerFunc {
 
 		loc := locationByCustomer{}
 
-		if err := db.Get(&loc, Queries.LocationById, locationId); err != nil {
+		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
@@ -78,7 +78,7 @@ func handleCreateVisit(db *sqlx.DB) http.HandlerFunc {
 		var isValid = true
 
 		if isValid && validatedConfirmed == "true" {
-			res, err := db.Exec(`INSERT INTO visits (location_id, employee_id) VALUES ($1, $2);`, locationId, 1)
+			res, err := db.Exec(InsertVisitSql, locationId, 1)
 
 			if err != nil {
 				renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
@@ -109,4 +109,81 @@ func handleCreateVisit(db *sqlx.DB) http.HandlerFunc {
 		sse.PatchElementTempl(NewVisitConfirm(vm))
 
 	}
+}
+
+const (
+	// --------------------------------------
+
+	InsertVisitSql = `INSERT INTO visits (location_id, employee_id) VALUES ($1, $2);`
+
+	// --------------------------------------
+
+	SelectCustomersSql = `SELECT * FROM customer;`
+
+	// --------------------------------------
+
+	SelectLocationsByCustomerIdSql = `
+		SELECT 
+			l.name AS location_name,
+			c.name AS customer_name,
+			l.id AS location_id
+		FROM location l
+		INNER JOIN customer c
+		ON l.customer_id = c.id
+		WHERE c.id = $1;`
+
+	// --------------------------------------
+
+	SelectLocationById = `
+ 		SELECT
+			l.name AS location_name,
+			c.name AS customer_name,
+			l.id AS location_id
+		FROM location l
+		INNER JOIN customer c
+		ON l.customer_id = c.id
+		WHERE l.id = $1;`
+	//----------------------------------
+
+)
+
+type Customer struct {
+	Id   int    `db:"id"`
+	Name string `db:"name"`
+}
+
+type Employee struct {
+	Id   int    `db:"id"`
+	Name string `db:"name"`
+}
+
+type Location struct {
+	Id         int    `db:"id"`
+	Name       string `db:"name"`
+	CustomerId int    `db:"customer_id"`
+}
+
+type Visit struct {
+	Id         int `db:"id"`
+	EmployeeId int `db:"employee_id"`
+	LocationId int `db:"location_id"`
+}
+
+type locationByCustomer struct {
+	LocationName string `db:"location_name"`
+	CustomerName string `db:"customer_name"`
+	LocationId   string `db:"location_id"`
+}
+
+type getLocSignals struct {
+	CustomerId string `json:"customerId"`
+}
+
+type visitVM struct {
+	Date         string
+	Duration     string
+	Notes        string
+	CustomerName string
+	LocationName string
+	LocationId   string
 }

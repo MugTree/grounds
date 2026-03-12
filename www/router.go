@@ -36,6 +36,9 @@ func AppSetup(db *sqlx.DB) chi.Router {
 	r.Get("/customer-location/", handlePatchLocation(db))
 	r.Post("/new-visit/", handleNewVisit(db))
 	r.Post("/create-visit/", handleCreateVisit(db))
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "OK!")
+	})
 	return r
 }
 

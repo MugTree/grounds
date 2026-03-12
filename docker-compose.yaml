@@ -3,6 +3,7 @@ version: "3.9"
 services:
   caddy:
     image: caddy:2
+    env_file: "docker.env"
     restart: always
     ports:
       - "${CADDY_HTTP_PORT}:${CADDY_HTTP_PORT}" # Host:Container
@@ -12,10 +13,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - api
+      - app
 
-  api:
-    env_file: ".env"
+  app:
+    env_file: "docker.env"
     build: .
     ports:
       - "${VT_APP_PORT}:${VT_APP_PORT}"
@@ -30,7 +31,7 @@ services:
 
   db:
     image: postgres:16
-    env_file: ".env"
+    env_file: "docker.env"
     restart: always
     environment:
       POSTGRES_USER: "${VT_DB_USER}"

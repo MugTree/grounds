@@ -1,3 +1,3 @@
-:3001 {
-    reverse_proxy api:8080
+{$VT_WEB_ADDRESS} {
+	reverse_proxy {$VT_REVERSE_PROXY_ADDRESS}
 }

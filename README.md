@@ -1,14 +1,20 @@
 # Go app using docker with postgres
 
-- look at setting up kamal for this
+Looking at using
 
-https://www.youtube.com/watch?v=ImqznBAzr_k
+```shell
+docker buildx linux/amd64 \
+  -t vt_app:latest \
+  --push \
+  ssh://portable@portable.cpp
+  ssh server "docker compose up -d app"
+```
 
-NEED TO SET UP A DOCKER ENV FILE THAT OVERRIDES ONE OF THE VARS add some logging in the container as well
+This seems to be a very simple aproach.
+
+Set up a new vps tomorrow. Get docker up and running and add a basic firewall
 
 ## For dev work....
-
-Assuming the database has already been created in docker desktop...
 
 load the env vars first...
 
@@ -60,25 +66,3 @@ with following rules
 - customer has one or many locations
 - visits have one operative
 - use foriegn keys if necessary
-
-## customer
-
-id,
-name
-
-## location
-
-id,
-name
-customer_id
-
-## visits
-
-id,
-location_id,
-employee_id
-
-## employee
-
-id
-name

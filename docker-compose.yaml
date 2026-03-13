@@ -7,7 +7,7 @@ services:
     restart: always
     ports:
       - "${CADDY_HTTP_PORT}:${CADDY_HTTP_PORT}" # Host:Container
-      # - "${CADDY_HTTPS_PORT}:${CADDY_HTTPS_PORT}" # Host:Container
+      - "${CADDY_HTTPS_PORT}:${CADDY_HTTPS_PORT}" # Host:Container
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - caddy_data:/data

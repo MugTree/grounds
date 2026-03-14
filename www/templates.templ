@@ -20,7 +20,7 @@ templ HomePage(customers []Customer) {
 	@Layout() {
 		if len(customers) > 0 {
 			<section>
-				<h1>Choose a customer</h1>
+				<h1>Choose a customer...</h1>
 				<select id="customers-sel" data-on:change="@get('/customer-location/')" data-bind:customer-id>
 					<option selected>Customers...</option>
 					for _, c := range customers {

@@ -1,3 +1,0 @@
-{$VT_WEB_ADDRESS} {
-	reverse_proxy {$VT_REVERSE_PROXY_ADDRESS}
-}

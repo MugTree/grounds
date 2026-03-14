@@ -14,7 +14,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+
+	_ "modernc.org/sqlite"
 )
 
 func main() {
@@ -30,34 +31,12 @@ func run(parent context.Context) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 
-	dbHost := mustEnv("VT_DB_HOST")
-	dbPort := mustEnv("VT_DB_PORT")
-	dbUser := mustEnv("VT_DB_USER")
-	dbPassword := mustEnv("VT_DB_PASSWORD")
-	dbName := mustEnv("VT_DB_NAME")
-	//appLog := mustEnv("VT_APP_LOG")
+	fmt.Println("reading .env")
+
+	dbPath := mustEnv("VT_APP_DB")
 	appPort := mustEnv("VT_APP_PORT")
 
-	fmt.Println(dbHost)
-
-	// log.SetOutput(&lumberjack.Logger{
-	// 	Filename:   appLog,
-	// 	MaxSize:    50, // MB
-	// 	MaxBackups: 5,
-	// 	MaxAge:     30, // days
-	// 	Compress:   true,
-	// })
-
-	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
-		dbHost,
-		dbPort,
-		dbUser,
-		dbPassword,
-		dbName,
-	)
-
-	db, err := sqlx.Open("postgres", connStr)
+	db, err := sqlx.Open("sqlite", dbPath)
 	if err != nil {
 		log.Fatalf("sql: error opening DB - %v", err)
 	}
@@ -83,6 +62,8 @@ func runBlocking(ctx context.Context, host string, app http.Handler) error {
 		Addr:    fmt.Sprintf(":%s", host),
 		Handler: app,
 	}
+
+	fmt.Println("starting server")
 
 	go func() {
 		<-ctx.Done()

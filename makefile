@@ -29,3 +29,9 @@ sync_assets:
 start-dev: 
 	make  -j3 templ serve sync_assets
 #	make -j 3  templ serve sync_assets
+
+production-build-app:
+	templ generate && GOOS=linux GOARCH=amd64  go build -o ./bin/server .
+
+vps-publish:
+	./scripts/upload_site_to_vps.sh

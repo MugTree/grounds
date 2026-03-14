@@ -105,7 +105,7 @@ func HomePage(customers []Customer) templ.Component {
 			}
 			ctx = templ.InitializeContext(ctx)
 			if len(customers) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<section><h1>Choose a customer</h1><select id=\"customers-sel\" data-on:change=\"@get('/customer-location/')\" data-bind:customer-id><option selected>Customers...</option> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<section><h1>Choose a customer...</h1><select id=\"customers-sel\" data-on:change=\"@get('/customer-location/')\" data-bind:customer-id><option selected>Customers...</option> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -1,6 +1,5 @@
 -- +goose Up
 -- +goose StatementBegin
-BEGIN;
 
 -- =========================
 -- EMPLOYEES
@@ -36,5 +35,4 @@ FROM location l
 JOIN employee e ON e.name = 'matt'
 WHERE l.name = 'HQ';
 
-COMMIT;
 -- +goose StatementEnd

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,12 +23,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := run(ctx); err != nil {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+
+	if err := run(ctx, *logger); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func run(parent context.Context) error {
+func run(parent context.Context, logger slog.Logger) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 
@@ -48,7 +51,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return www.AppSetup(db)
+			return www.AppSetup(db, logger)
 		}
 	}
 

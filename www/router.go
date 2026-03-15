@@ -3,6 +3,7 @@ package www
 import (
 	"embed"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/benbjohnson/hashfs"
@@ -28,7 +29,7 @@ var (
 	show employees
 */
 
-func AppSetup(db *sqlx.DB) chi.Router {
+func AppSetup(db *sqlx.DB, logger slog.Logger) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 	r.Get("/", handleHomepage(db))
@@ -45,7 +46,7 @@ func staticPath(format string, args ...any) string {
 	return "/" + StaticSys.HashName(fmt.Sprintf("public/"+format, args...))
 }
 
-func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
+func renderServerError(logger slog.Logger, w http.ResponseWriter, r *http.Request, msg string) {
 	fmt.Printf("Error: %v", msg)
 	ErrorPage().Render(r.Context(), w)
 }

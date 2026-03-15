@@ -1,9 +1,9 @@
-package www
+package app
 
 import (
 	"embed"
 	"fmt"
-	"log/slog"
+	"log"
 	"net/http"
 
 	"github.com/benbjohnson/hashfs"
@@ -29,13 +29,13 @@ var (
 	show employees
 */
 
-func AppSetup(db *sqlx.DB, logger slog.Logger) chi.Router {
+func AppSetup(db *sqlx.DB) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
-	r.Get("/", handleHomepage(db, logger))
-	r.Get("/customer-location/", handlePatchLocation(db, logger))
-	r.Post("/new-visit/", handleNewVisit(db, logger))
-	r.Post("/create-visit/", handleCreateVisit(db, logger))
+	r.Get("/", handleHomepage(db))
+	r.Get("/customer-location/", handlePatchLocation(db))
+	r.Post("/new-visit/", handleNewVisit(db))
+	r.Post("/create-visit/", handleCreateVisit(db))
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK!")
 	})
@@ -46,7 +46,12 @@ func staticPath(format string, args ...any) string {
 	return "/" + StaticSys.HashName(fmt.Sprintf("public/"+format, args...))
 }
 
-func renderServerError(logger slog.Logger, w http.ResponseWriter, r *http.Request, msg string) {
-	logger.Error(msg)
+func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
+	LogError(msg)
 	ErrorPage().Render(r.Context(), w)
 }
+
+func LogInfo(msg string) { log.Println("INFO: " + msg) }
+
+// func Warn(msg string)     { log.Println("WARN: " + msg) }
+func LogError(msg string) { log.Println("ERROR: " + msg) }

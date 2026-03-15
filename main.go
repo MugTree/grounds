@@ -3,14 +3,14 @@ package main
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"main/www"
+	"main/app"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
@@ -22,23 +22,23 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
-	if err := run(ctx, *log); err != nil {
-		log.Error(err.Error())
+	if err := run(ctx); err != nil {
+		app.LogError(err.Error())
 	}
 }
 
-func run(parent context.Context, logger slog.Logger) error {
+func run(parent context.Context) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 
-	logger.Info("reading .env")
+	app.LogInfo("reading .env")
 
 	mustEnv := func(key string) string {
 		val, ok := os.LookupEnv(key)
 		if !ok {
-			logger.Error(fmt.Sprintf("Missing required env var: %s", key))
+			app.LogError(fmt.Sprintf("env: missing required env var: %s", key))
 			os.Exit(1)
 		}
 		return val
@@ -59,22 +59,22 @@ func run(parent context.Context, logger slog.Logger) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return www.AppSetup(db, logger)
+			return app.AppSetup(db)
 		}
 	}
 
 	app := appRouterSetup()
-	return runBlocking(ctx, appPort, app(), logger)
+	return runBlocking(ctx, appPort, app())
 }
 
-func runBlocking(ctx context.Context, host string, app http.Handler, logger slog.Logger) error {
+func runBlocking(ctx context.Context, host string, router http.Handler) error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", host),
-		Handler: app,
+		Handler: router,
 	}
 
-	logger.Info("Starting app server")
+	app.LogInfo("Starting app server")
 
 	go func() {
 		<-ctx.Done()
@@ -82,20 +82,20 @@ func runBlocking(ctx context.Context, host string, app http.Handler, logger slog
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		logger.Info("Shutting down server...")
+		app.LogInfo("Shutting down server...")
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			logger.Error(fmt.Sprintf("Error during shutdown: %v", err))
+			app.LogError(fmt.Sprintf("shutdown: error during shutdown: %v", err))
 		}
 	}()
 
-	logger.Info(fmt.Sprintf("Server running at http://localhost%s", server.Addr))
+	app.LogInfo(fmt.Sprintf("Server running at http://localhost%s", server.Addr))
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("server error: %w", err)
 	}
 
-	logger.Info("Server stopped.")
+	app.LogInfo("Server stopped.")
 	return nil
 }

@@ -10,13 +10,13 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func handleHomepage(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
+func handleHomepage(db *sqlx.DB, logger slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customers := []Customer{}
 
 		if err := db.Select(&customers, SelectCustomersSql); err != nil {
-			renderServerError(log, w, r, fmt.Sprintf("sql: error getting customers - %v", err))
+			renderServerError(logger, w, r, fmt.Sprintf("sql: error getting customers - %v", err))
 			return
 		}
 
@@ -24,7 +24,7 @@ func handleHomepage(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 	}
 }
 
-func handlePatchLocation(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
+func handlePatchLocation(db *sqlx.DB, logger slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		signals := getLocSignals{}
@@ -32,7 +32,7 @@ func handlePatchLocation(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 		lbc := []locationByCustomer{}
 
 		if err := db.Select(&lbc, SelectLocationsByCustomerIdSql, signals.CustomerId); err != nil {
-			renderServerError(log, w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
+			renderServerError(logger, w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
 			return
 		}
 
@@ -41,7 +41,7 @@ func handlePatchLocation(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 	}
 }
 
-func handleNewVisit(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
+func handleNewVisit(db *sqlx.DB, logger slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		locationId := r.FormValue("location_id")
@@ -49,7 +49,7 @@ func handleNewVisit(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 		loc := locationByCustomer{}
 
 		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
-			renderServerError(log, w, r, fmt.Sprintf("sql: error getting location - %v", err))
+			renderServerError(logger, w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
 
@@ -65,7 +65,7 @@ func handleNewVisit(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 	}
 }
 
-func handleCreateVisit(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
+func handleCreateVisit(db *sqlx.DB, logger slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		date := r.FormValue("visit-date")
@@ -82,13 +82,13 @@ func handleCreateVisit(db *sqlx.DB, log slog.Logger) http.HandlerFunc {
 			res, err := db.Exec(InsertVisitSql, locationId, 1)
 
 			if err != nil {
-				renderServerError(log, w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
+				renderServerError(logger, w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
 				return
 			}
 
 			rows, _ := res.RowsAffected()
 			if rows != 1 {
-				renderServerError(log, w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
+				renderServerError(logger, w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
 				return
 			}
 

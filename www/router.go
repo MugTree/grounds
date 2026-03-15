@@ -32,10 +32,10 @@ var (
 func AppSetup(db *sqlx.DB, logger slog.Logger) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
-	r.Get("/", handleHomepage(db))
-	r.Get("/customer-location/", handlePatchLocation(db))
-	r.Post("/new-visit/", handleNewVisit(db))
-	r.Post("/create-visit/", handleCreateVisit(db))
+	r.Get("/", handleHomepage(db, logger))
+	r.Get("/customer-location/", handlePatchLocation(db, logger))
+	r.Post("/new-visit/", handleNewVisit(db, logger))
+	r.Post("/create-visit/", handleCreateVisit(db, logger))
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK!")
 	})
@@ -47,6 +47,6 @@ func staticPath(format string, args ...any) string {
 }
 
 func renderServerError(logger slog.Logger, w http.ResponseWriter, r *http.Request, msg string) {
-	fmt.Printf("Error: %v", msg)
+	logger.Error(msg)
 	ErrorPage().Render(r.Context(), w)
 }

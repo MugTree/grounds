@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -23,10 +22,10 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	log := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 
-	if err := run(ctx, *logger); err != nil {
-		fmt.Println(err)
+	if err := run(ctx, *log); err != nil {
+		log.Error(err.Error())
 	}
 }
 
@@ -34,19 +33,28 @@ func run(parent context.Context, logger slog.Logger) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 
-	fmt.Println("reading .env")
+	logger.Info("reading .env")
+
+	mustEnv := func(key string) string {
+		val, ok := os.LookupEnv(key)
+		if !ok {
+			logger.Error(fmt.Sprintf("Missing required env var: %s", key))
+			os.Exit(1)
+		}
+		return val
+	}
 
 	dbPath := mustEnv("VT_APP_DB")
 	appPort := mustEnv("VT_APP_PORT")
 
 	db, err := sqlx.Open("sqlite", dbPath)
 	if err != nil {
-		log.Fatalf("sql: error opening DB - %v", err)
+		return fmt.Errorf("sql: error opening DB - %v", err)
 	}
 
 	err = db.Ping()
 	if err != nil {
-		log.Fatalf("sql: error pinging DB - %v", err)
+		return fmt.Errorf("sql: error pinging DB - %v", err)
 	}
 
 	appRouterSetup := func() func() chi.Router {
@@ -56,17 +64,17 @@ func run(parent context.Context, logger slog.Logger) error {
 	}
 
 	app := appRouterSetup()
-	return runBlocking(ctx, appPort, app())
+	return runBlocking(ctx, appPort, app(), logger)
 }
 
-func runBlocking(ctx context.Context, host string, app http.Handler) error {
+func runBlocking(ctx context.Context, host string, app http.Handler, logger slog.Logger) error {
 
 	server := &http.Server{
 		Addr:    fmt.Sprintf(":%s", host),
 		Handler: app,
 	}
 
-	fmt.Println("starting server")
+	logger.Info("Starting app server")
 
 	go func() {
 		<-ctx.Done()
@@ -74,28 +82,20 @@ func runBlocking(ctx context.Context, host string, app http.Handler) error {
 		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		fmt.Println("Shutting down server...")
+		logger.Info("Shutting down server...")
 
 		if err := server.Shutdown(shutdownCtx); err != nil {
-			log.Printf("Error during shutdown: %v", err)
+			logger.Error(fmt.Sprintf("Error during shutdown: %v", err))
 		}
 	}()
 
-	fmt.Printf("Server running at http://localhost%s", server.Addr)
+	logger.Info(fmt.Sprintf("Server running at http://localhost%s", server.Addr))
 
 	err := server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		return fmt.Errorf("server error: %w", err)
 	}
 
-	fmt.Println("Server stopped.")
+	logger.Info("Server stopped.")
 	return nil
-}
-
-func mustEnv(key string) string {
-	val, ok := os.LookupEnv(key)
-	if !ok {
-		log.Fatalf("Missing required env var: %s", key)
-	}
-	return val
 }

@@ -17,49 +17,40 @@ templ Layout() {
 	</html>
 }
 
-
-
-templ HomePage(customers []Customer, showStage2 bool) {
+// this is either called by a get or a post
+// -------------------------------------------------------
+templ HomePage(vm HomepageVm) {
 	@Layout() {
-		if len(customers) > 0 {
-			<section>
+		if len(vm.Customers) > 0 {
+			<section data-signals="{customerId: 0, locationId: 0}">
 				<h1>Choose a customer...</h1>
-				<select id="customers-sel" data-on:change="@get('/customer-location/')" data-bind:customerId>
-					<option selected>Customers...</option>
-					for _, c := range customers {
+				<select id="customers-sel" data-bind="customerId">
+					<option selected value="0">Customers...</option>
+					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
+				<button data-on:click="$locationId = 0; $customerId = parseInt($customerId); @post('/')">Get customer</button>
 			</section>
-			<section id="locations">...</section>
 		}
-		if showStage2 {
-
-			
+		if vm.ShowLocations {
+			<section id="locations">
+				if len(vm.Locations) > 0 {
+					<h2>Choose a { vm.Locations[0].Name } location</h2>
+					<select name="location-sel" data-bind="locationId">
+						<option selected value="0">Locations...</option>
+						for _, l := range vm.Locations {
+							<option value={ l.Id }>{  } { l.Name }</option>
+						}
+					</select>
+					<button data-on:click="$locationId = parseInt($locationId); @post('/')">Get location</button>
+				} else {
+					<p>No locations configured </p>
+				}
+			</section>
 		}
 	}
 }
-
-templ LocationsByCustomerForm(lbc []locationByCustomer) {
-	<section id="locations">
-		if len(lbc) > 0 {
-			<h2>Choose a { lbc[0].CustomerName } location</h2>
-			<form method="get" id="location-form" action="/new-visit/" data-on:submit="checkLocation(evt)">
-				<s
-				elect name="location-id" id="location-id">
-					<option selected value="">Locations...</option>
-					for _, l := range lbc {
-						<option value={ l.LocationId }>{  } { l.LocationName }</option>
-					}
-				</select>
-				<button type="submit">New visit</button>
-			</form>
-		} else {
-			<p>No locations configured </p>
-		}
-	</section>
-}
-
 
 templ NewVisitStage1Form(lv visitVM) {
 	<h2>Complete the form</h2>

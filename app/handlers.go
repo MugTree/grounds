@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -9,48 +10,156 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func handleHomepage(db *sqlx.DB) http.HandlerFunc {
+type HomepageVm struct {
+	SelectedCustomer int
+	SelectedLocation int
+	ShowLocations    bool
+	Customers        []Customer
+	Locations        []Location
+	IsValid          bool
+}
+
+type homePageSignals struct {
+	CustomerId int `json:"customerId"`
+	LocationId int `json:"locationId"`
+}
+
+func handleHomepageGet(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		customers := []Customer{}
-
-		if err := db.Select(&customers, SelectCustomersSql); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting customers - %v", err))
+		ok, customers, _ := getHomepageData(db, w, r)
+		if !ok {
 			return
 		}
 
-		HomePage(customers).Render(r.Context(), w)
+		vm := HomepageVm{Customers: customers}
+		HomePage(vm).Render(r.Context(), w)
 	}
+
 }
 
-func handlePatchLocation(db *sqlx.DB) http.HandlerFunc {
+func handleHomepagePost(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		signals := getLocSignals{}
-		datastar.ReadSignals(r, &signals)
-		lbc := []locationByCustomer{}
+		ok, customers, locations := getHomepageData(db, w, r)
+		if !ok {
+			return
+		}
 
-		if err := db.Select(&lbc, SelectLocationsByCustomerIdSql, signals.CustomerId); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
+		signals := homePageSignals{}
+		if err := datastar.ReadSignals(r, &signals); err != nil {
+			renderServerError(w, r, fmt.Sprintf("http: error reading signals - %v", err))
 			return
 		}
 
 		sse := datastar.NewSSE(w, r)
-		sse.PatchElementTempl(LocationsByCustomerForm(lbc))
-		// sse.ExecuteScript(`
-		// 	document.getElementById("location-form").addEventListener("submit", function(e) {
-		// 		 e.preventDefault();
-		// 		 const value = document.getElementById("location-id").value;
-		// 		 if (value === "") {
+		vm := HomepageVm{Customers: customers}
 
-		// 		 	alert("Please select a location");
-		// 		 } else {
-		// 		 	window.location.assign(e.target.action  + value + "/");
-		// 		 }
-		// 	});`,
-		// )
+		switch signals.CustomerId {
+		case 0:
+			sse.PatchElementTempl(HomePage(vm))
+			return
+		default:
+
+			switch signals.LocationId {
+			case 0:
+				vm.Locations = getCustomerLocations(locations, signals.CustomerId)
+				vm.ShowLocations = true
+				sse.PatchElementTempl(HomePage(vm))
+			default:
+
+				var location Location
+				err := db.GetContext(r.Context(), &location,
+					"SELECT * FROM location WHERE id = ? AND customer_id = ?",
+					signals.LocationId, signals.CustomerId,
+				)
+
+				if err != nil {
+					msg := ""
+					if err == sql.ErrNoRows {
+						msg = fmt.Sprintf("sql: error selecting location - check inputs - %v - %v",
+							signals.LocationId, signals.CustomerId)
+					} else {
+						msg = fmt.Sprintf("http: error selecting location - check inputs - %v - %v",
+							signals.LocationId, signals.CustomerId)
+					}
+					renderServerError(w, r, msg)
+					return
+				}
+
+				LogInfo(fmt.Sprintf("All looking good: %v", location))
+				sse.ExecuteScript(fmt.Sprintf(`window.location = "/new-visit/%v/"`, signals.LocationId))
+			}
+		}
+
 	}
 }
+
+func getCustomerLocations(locations []Location, customerId int) []Location {
+	customerLocations := []Location{}
+	for _, loc := range locations {
+		if loc.CustomerId == customerId {
+			customerLocations = append(customerLocations, loc)
+		}
+	}
+	return customerLocations
+}
+
+func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []Customer, []Location) {
+
+	var customers []Customer
+	var locations []Location
+
+	selectData := func(data any, name string, sql string) bool {
+		if err := db.SelectContext(r.Context(), data, sql); err != nil {
+			renderServerError(w, r, fmt.Sprintf("db: error selecting from table '%s' - %v", name, err))
+			return false
+		}
+		return true
+	}
+
+	ok := selectData(&customers, "customers", SelectCustomersSql)
+	if !ok {
+		return false, customers, locations
+	}
+
+	ok = selectData(&locations, "locations", SelectLocationsSql)
+	if !ok {
+		return false, customers, locations
+	}
+
+	return true, customers, locations
+
+}
+
+// func handlePatchLocation(db *sqlx.DB) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+
+// 		signals := getLocSignals{}
+// 		datastar.ReadSignals(r, &signals)
+// 		lbc := []locationByCustomer{}
+
+// 		if err := db.Select(&lbc, SelectLocationsByCustomerIdSql, signals.CustomerId); err != nil {
+// 			renderServerError(w, r, fmt.Sprintf("sql: error getting locations by customer - %v", err))
+// 			return
+// 		}
+
+// 		sse := datastar.NewSSE(w, r)
+// 		sse.PatchElementTempl(LocationsByCustomerForm(lbc))
+// 		sse.ExecuteScript(`
+// 			document.getElementById("location-form").addEventListener("submit", function(e) {
+// 				 e.preventDefault();
+// 				 const value = document.getElementById("location-id").value;
+// 				 if (value === "") {
+
+// 				 	alert("Please select a location");
+// 				 } else {
+// 				 	window.location.assign(e.target.action  + value + "/");
+// 				 }
+// 			});`,
+// 		)
+// 	}
+// }
 
 func handleNewVisit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -133,6 +242,10 @@ const (
 	SelectCustomersSql = `SELECT * FROM customer;`
 
 	// --------------------------------------
+
+	SelectLocationsSql = `SELECT * FROM location;`
+
+	// ----------------------------------------
 
 	SelectLocationsByCustomerIdSql = `
 		SELECT 

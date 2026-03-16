@@ -1,7 +1,6 @@
 package app
 
 import (
-	"database/sql"
 	"fmt"
 	"net/http"
 	"time"
@@ -39,55 +38,29 @@ func handleHomepagePost(db *sqlx.DB) http.HandlerFunc {
 		sse := datastar.NewSSE(w, r)
 		vm := HomepageVm{Customers: customers}
 
-		switch signals.CustomerId {
-		case 0:
+		if signals.CustomerId == 0 {
 			sse.PatchElementTempl(HomePage(vm))
 			return
-		default:
-
-			switch signals.LocationId {
-			case 0:
-
-				getLocations := func(locations []Location, customerId int) []Location {
-					customerLocations := []Location{}
-					for _, loc := range locations {
-						if loc.CustomerId == customerId {
-							customerLocations = append(customerLocations, loc)
-						}
-					}
-					return customerLocations
-				}
-
-				vm.Locations = getLocations(locations, signals.CustomerId)
-				vm.ShowLocations = true
-				sse.PatchElementTempl(HomePage(vm))
-			default:
-
-				var location Location
-				err := db.GetContext(r.Context(), &location,
-					"SELECT * FROM location WHERE id = ? AND customer_id = ?",
-					signals.LocationId, signals.CustomerId,
-				)
-
-				if err != nil {
-					msg := ""
-					if err == sql.ErrNoRows {
-						msg = fmt.Sprintf("sql: error selecting location - check inputs - %v - %v",
-							signals.LocationId, signals.CustomerId)
-					} else {
-						msg = fmt.Sprintf("http: error selecting location - check inputs - %v - %v",
-							signals.LocationId, signals.CustomerId)
-					}
-					renderServerError(w, r, msg)
-					return
-				}
-
-				LogInfo(fmt.Sprintf("All looking good: %v", location))
-				sse.ExecuteScript(fmt.Sprintf(`window.location = "/visit/%v/"`, signals.LocationId))
-			}
 		}
 
+		if signals.LocationId == 0 {
+			vm.ShowLocations = true
+			vm.Locations = filteredLocations(locations, signals.CustomerId)
+			sse.PatchElementTempl(HomePage(vm))
+			return
+		}
+
+		location, err := getLocation(r.Context(), db, signals.LocationId, signals.CustomerId)
+		if err != nil {
+			handleLocationError(w, r, err, signals)
+			return
+		}
+
+		LogInfo(fmt.Sprintf("All looking good: %v", location))
+		sse.ExecuteScript(fmt.Sprintf(`window.location = "/visit/%v/"`, signals.LocationId))
+
 	}
+
 }
 
 func handleVisitGet(db *sqlx.DB) http.HandlerFunc {

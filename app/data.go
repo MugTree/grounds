@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 
@@ -46,6 +48,60 @@ func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool,
 
 	return true, customers, locations
 
+}
+
+func filteredLocations(locations []Location, customerId int) []Location {
+	filtered := make([]Location, 0, len(locations))
+	for _, loc := range locations {
+		if loc.CustomerId == customerId {
+			filtered = append(filtered, loc)
+		}
+	}
+	return filtered
+}
+
+func getLocation(ctx context.Context, db *sqlx.DB, locationId, customerId int) (Location, error) {
+	var location Location
+
+	err := db.GetContext(
+		ctx,
+		&location,
+		"SELECT * FROM location WHERE id = ? AND customer_id = ?",
+		locationId,
+		customerId,
+	)
+
+	return location, err
+}
+
+func handleLocationError(
+	w http.ResponseWriter,
+	r *http.Request,
+	err error,
+	signals homePageSignals,
+) {
+	if err == sql.ErrNoRows {
+		renderServerError(
+			w,
+			r,
+			fmt.Sprintf(
+				"sql: error selecting location - check inputs - %v - %v",
+				signals.LocationId,
+				signals.CustomerId,
+			),
+		)
+		return
+	}
+
+	renderServerError(
+		w,
+		r,
+		fmt.Sprintf(
+			"http: error selecting location - check inputs - %v - %v",
+			signals.LocationId,
+			signals.CustomerId,
+		),
+	)
 }
 
 const (

@@ -37,13 +37,25 @@ func handlePatchLocation(db *sqlx.DB) http.HandlerFunc {
 
 		sse := datastar.NewSSE(w, r)
 		sse.PatchElementTempl(LocationsByCustomerForm(lbc))
+		// sse.ExecuteScript(`
+		// 	document.getElementById("location-form").addEventListener("submit", function(e) {
+		// 		 e.preventDefault();
+		// 		 const value = document.getElementById("location-id").value;
+		// 		 if (value === "") {
+
+		// 		 	alert("Please select a location");
+		// 		 } else {
+		// 		 	window.location.assign(e.target.action  + value + "/");
+		// 		 }
+		// 	});`,
+		// )
 	}
 }
 
 func handleNewVisit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		locationId := r.FormValue("location_id")
+		locationId := r.PathValue("location_id")
 
 		loc := locationByCustomer{}
 

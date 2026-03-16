@@ -12,16 +12,19 @@ templ Layout() {
 		</head>
 		<body>
 			{ children... }
+			<script src={ staticPath("js/script.js") }></script>
 		</body>
 	</html>
 }
 
-templ HomePage(customers []Customer) {
+
+
+templ HomePage(customers []Customer, showStage2 bool) {
 	@Layout() {
 		if len(customers) > 0 {
 			<section>
 				<h1>Choose a customer...</h1>
-				<select id="customers-sel" data-on:change="@get('/customer-location/')" data-bind:customer-id>
+				<select id="customers-sel" data-on:change="@get('/customer-location/')" data-bind:customerId>
 					<option selected>Customers...</option>
 					for _, c := range customers {
 						<option value={ c.Id }>{ c.Name }</option>
@@ -30,6 +33,10 @@ templ HomePage(customers []Customer) {
 			</section>
 			<section id="locations">...</section>
 		}
+		if showStage2 {
+
+			
+		}
 	}
 }
 
@@ -37,9 +44,10 @@ templ LocationsByCustomerForm(lbc []locationByCustomer) {
 	<section id="locations">
 		if len(lbc) > 0 {
 			<h2>Choose a { lbc[0].CustomerName } location</h2>
-			<form action="/new-visit/" method="post">
-				<select id="locations-sel" name="location_id">
-					<option selected>Locations...</option>
+			<form method="get" id="location-form" action="/new-visit/" data-on:submit="checkLocation(evt)">
+				<s
+				elect name="location-id" id="location-id">
+					<option selected value="">Locations...</option>
 					for _, l := range lbc {
 						<option value={ l.LocationId }>{  } { l.LocationName }</option>
 					}
@@ -51,6 +59,7 @@ templ LocationsByCustomerForm(lbc []locationByCustomer) {
 		}
 	</section>
 }
+
 
 templ NewVisitStage1Form(lv visitVM) {
 	<h2>Complete the form</h2>
@@ -113,5 +122,15 @@ templ NewVisitConfirm(vm visitVM) {
 templ ErrorPage() {
 	@Layout() {
 		<h1>500 - server error</h1>
+	}
+}
+
+templ TestPage() {
+	@Layout() {
+		<div>i am a test page</div>
+		<select name="status" required>
+			<option value="">Choose one</option>
+			<option value="ok">OK</option>
+		</select>
 	}
 }

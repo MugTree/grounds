@@ -34,10 +34,16 @@ func AppSetup(db *sqlx.DB) chi.Router {
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 	r.Get("/", handleHomepage(db))
 	r.Get("/customer-location/", handlePatchLocation(db))
-	r.Post("/new-visit/", handleNewVisit(db))
+
+	r.Get("/new-visit/{location_id}/", handleNewVisit(db))
+
 	r.Post("/create-visit/", handleCreateVisit(db))
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "OK!")
+	})
+
+	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {
+		TestPage().Render(r.Context(), w)
 	})
 	return r
 }

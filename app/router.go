@@ -34,13 +34,8 @@ func AppSetup(db *sqlx.DB) chi.Router {
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 	r.Get("/", handleHomepageGet(db))
 	r.Post("/", handleHomepagePost(db))
-
-	r.Get("/new-visit/{location_id}/", handleNewVisit(db))
-
-	r.Post("/create-visit/", handleCreateVisit(db))
-	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "OK!")
-	})
+	r.Get("/visit/{location_id}/", handleVisitGet(db))
+	r.Post("/visit/{location_id}/", handleVisitPost(db))
 
 	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {
 		TestPage().Render(r.Context(), w)
@@ -57,7 +52,5 @@ func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
 	ErrorPage().Render(r.Context(), w)
 }
 
-func LogInfo(msg string) { log.Println("INFO: " + msg) }
-
-// func Warn(msg string)     { log.Println("WARN: " + msg) }
+func LogInfo(msg string)  { log.Println("INFO: " + msg) }
 func LogError(msg string) { log.Println("ERROR: " + msg) }

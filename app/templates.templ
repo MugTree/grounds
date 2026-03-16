@@ -13,7 +13,6 @@ templ Layout() {
 			<link href={ staticPath("css/main.css") } rel="stylesheet"/>
 		</head>
 		<body>
-			<p><a href="/">Home...</a></p>
 			{ children... }
 			<script src={ staticPath("js/script.js") }></script>
 		</body>
@@ -22,10 +21,12 @@ templ Layout() {
 
 templ HomePage(vm HomepageVm) {
 	@Layout() {
+		<p>Some app </p>
+		<hr/>
 		if len(vm.Customers) > 0 {
 			<section data-signals="{customerId: 0, locationId: 0}">
 				<h1>Choose a customer...</h1>
-				<select id="customers-sel" data-bind="customerId">
+				<select id="customers-sel" data-bind="customerId" data-on:change="($location !== 0) && @get('/')">
 					<option selected value="0">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
@@ -55,6 +56,8 @@ templ HomePage(vm HomepageVm) {
 
 templ VisitStage1(vm visitVM) {
 	@Layout() {
+		<p>Some app | <a href="#" onclick="history.back(); return false;">Back</a></p>
+		<hr/>
 		<h1>Visit to { vm.CustomerName } - { vm.LocationName } </h1>
 		<div id="visit">
 			<section id="stage1">
@@ -111,6 +114,9 @@ templ VisitSharedForm(lv visitVM) {
 		{{ action := fmt.Sprintf("@post('/visit/%v/', {contentType: 'form'})", lv.LocationId) }}
 		<button data-on:click={ action }>Submit</button>
 	</form>
+}
+
+templ Navlink() {
 }
 
 templ ErrorPage() {

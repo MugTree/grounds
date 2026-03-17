@@ -32,10 +32,19 @@ var (
 func AppSetup(db *sqlx.DB) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
-	r.Get("/", handleHomepageGet(db))
-	r.Post("/", handleHomepagePost(db))
-	r.Get("/visit/{location_id}/", handleVisitGet(db))
-	r.Post("/visit/{location_id}/", handleVisitPost(db))
+
+	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/visit/", 303)
+	})
+
+	r.Route("/visit", func(r chi.Router) {
+		r.Get("/", handleHomepageGet(db))
+		r.Post("/", handleHomepagePost(db))
+		r.Route("/add", func(r chi.Router) {
+			r.Get("/{location_id}/", handleVisitGet(db))
+			r.Post("/{location_id}/", handleVisitPost(db))
+		})
+	})
 
 	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {
 		TestPage().Render(r.Context(), w)

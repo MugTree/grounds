@@ -57,7 +57,7 @@ func handleHomepagePost(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		LogInfo(fmt.Sprintf("All looking good: %v", location))
-		sse.ExecuteScript(fmt.Sprintf(`window.location = "/visit/%v/"`, signals.LocationId))
+		sse.ExecuteScript(fmt.Sprintf(`window.location = "/visit/add/%v/"`, signals.LocationId))
 
 	}
 
@@ -84,7 +84,6 @@ func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		LogInfo("starting stage 1")
-
 		VisitStage1(vm).Render(r.Context(), w)
 	}
 }
@@ -118,7 +117,6 @@ func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
 			}
 
 			LogInfo("stage 2 finished and redirecting")
-
 			sse.ExecuteScript(`window.location = "/"`)
 			return
 		}

@@ -124,7 +124,7 @@ func HomePage(vm HomepageVm) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if len(vm.Customers) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<section data-signals=\"{customerId: 0, locationId: 0}\"><h1>Choose a customer...</h1><select id=\"customers-sel\" data-bind=\"customerId\" data-on:change=\"($location !== 0) && @get('/')\"><option selected value=\"0\">Customers...</option> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<section data-signals=\"{customerId: 0, locationId: 0}\"><h1>Choose a customer...</h1><select id=\"customers-sel\" data-bind=\"customerId\" data-on:change=\"($location !== 0) && @get('/visit/')\"><option selected value=\"0\">Customers...</option> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -160,7 +160,7 @@ func HomePage(vm HomepageVm) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select> <button data-on:click=\"$locationId = 0; $customerId = parseInt($customerId); @post('/')\">Get customer</button></section>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</select> <button data-on:click=\"$locationId = 0; $customerId = parseInt($customerId); @post('/visit/')\">Get customer</button></section>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -211,7 +211,7 @@ func HomePage(vm HomepageVm) templ.Component {
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</select> <button data-on:click=\"$locationId = parseInt($locationId); @post('/')\">Get location</button>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</select> <button data-on:click=\"$locationId = parseInt($locationId); @post('/visit/')\">Get location</button>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -441,7 +441,7 @@ func VisitStage2(vm visitVM) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		action := fmt.Sprintf("@post('/visit/%v/', {contentType: 'form'})", vm.LocationId)
+		action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", vm.LocationId)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<button type=\"submit\" data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -553,7 +553,7 @@ func VisitSharedForm(lv visitVM) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		action := fmt.Sprintf("@post('/visit/%v/', {contentType: 'form'})", lv.LocationId)
+		action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", lv.LocationId)
 		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<button data-on:click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

@@ -26,13 +26,13 @@ templ HomePage(vm HomepageVm) {
 		if len(vm.Customers) > 0 {
 			<section data-signals="{customerId: 0, locationId: 0}">
 				<h1>Choose a customer...</h1>
-				<select id="customers-sel" data-bind="customerId" data-on:change="($location !== 0) && @get('/')">
+				<select id="customers-sel" data-bind="customerId" data-on:change="($location !== 0) && @get('/visit/')">
 					<option selected value="0">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
-				<button data-on:click="$locationId = 0; $customerId = parseInt($customerId); @post('/')">Get customer</button>
+				<button data-on:click="$locationId = 0; $customerId = parseInt($customerId); @post('/visit/')">Get customer</button>
 			</section>
 		}
 		if vm.ShowLocations {
@@ -45,7 +45,7 @@ templ HomePage(vm HomepageVm) {
 							<option value={ l.Id }>{  } { l.Name }</option>
 						}
 					</select>
-					<button data-on:click="$locationId = parseInt($locationId); @post('/')">Get location</button>
+					<button data-on:click="$locationId = parseInt($locationId); @post('/visit/')">Get location</button>
 				} else {
 					<p>No locations configured </p>
 				}
@@ -85,7 +85,7 @@ templ VisitStage2(vm visitVM) {
 				<input type="hidden" name="visit-duration" value={ vm.Duration }/>
 				<input type="hidden" name="visit-notes" value={ vm.Notes }/>
 				<input type="hidden" name="validated-confirmed" value="true"/>
-				{{ action := fmt.Sprintf("@post('/visit/%v/', {contentType: 'form'})", vm.LocationId) }}
+				{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", vm.LocationId) }}
 				<button type="submit" data-on:click={ action }>Yes</button>
 				<button type="reset" data-on:click="$stage2 = false">No</button>
 			</form>
@@ -111,7 +111,7 @@ templ VisitSharedForm(lv visitVM) {
 		<label for="visit-notes">Notes:</label>
 		<textarea name="visit-notes" id="visit-notes" placeholder="notes..."></textarea>
 		<hr/>
-		{{ action := fmt.Sprintf("@post('/visit/%v/', {contentType: 'form'})", lv.LocationId) }}
+		{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", lv.LocationId) }}
 		<button data-on:click={ action }>Submit</button>
 	</form>
 }

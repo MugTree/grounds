@@ -103,7 +103,7 @@ func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
 
 		sse := datastar.NewSSE(w, r)
 		if isValid && validatedConfirmed == "true" {
-			res, err := db.Exec(InsertVisitSql, locationId, 1)
+			res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
 
 			if err != nil {
 				renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))

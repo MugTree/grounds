@@ -107,7 +107,7 @@ func handleLocationError(
 const (
 	// --------------------------------------
 
-	InsertVisitSql = `INSERT INTO visits (location_id, employee_id) VALUES ($1, $2);`
+	InsertVisitSql = `INSERT INTO visits (location_id, employee_id, notes) VALUES ($1, $2, $3);`
 
 	// --------------------------------------
 

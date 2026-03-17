@@ -11,3 +11,8 @@ source ./load_env.sh
 ```bash
 goose -dir ./data/seeds -no-versioning up
 ```
+
+# Todo
+
+Need to look at the way that time is shown on the uploads page
+Visits table needs ALTERing

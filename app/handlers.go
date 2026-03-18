@@ -119,45 +119,43 @@ func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
 		locationId := r.FormValue("location-id")
 		locationName := r.FormValue("location-name")
 		customerName := r.FormValue("customer-name")
-		validatedConfirmed := r.FormValue("validated-confirmed")
 
-		godump.Dump(date, duration, notes, locationId, locationName, customerName, validatedConfirmed)
+		godump.Dump(date, duration, notes, locationId, locationName, customerName)
 
-		var isValid = true
+		res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
 
-		sse := datastar.NewSSE(w, r)
-		if isValid && validatedConfirmed == "true" {
-			res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
+		/*
 
-			if err != nil {
-				renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
-				return
-			}
+			1). We'll need a writable directory on the host to write the images to.
+			2). Well need a process of tying all the cross table data together
 
-			rows, _ := res.RowsAffected()
-			if rows != 1 {
-				renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
-				return
-			}
+			use the last_insert_id eg.
 
-			LogInfo("stage 2 finished and redirecting")
-			sse.ExecuteScript(`window.location = "/"`)
+			This will return a last_insert_id that we use as the visit_id for each image added tothe images table.
+
+			So for each image ...
+
+			    create a filename hash
+			    save to disk
+			    insert into images storing the hash so we can ref it in the app
+			    maybe create a thumbnail at this point as well
+
+
+		*/
+
+		if err != nil {
+			renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
 			return
 		}
 
-		vm := visitVM{
-			Date:         date,
-			Duration:     duration,
-			Notes:        notes,
-			LocationId:   locationId,
-			LocationName: locationName,
-			CustomerName: customerName,
+		rows, _ := res.RowsAffected()
+		if rows != 1 {
+			renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
+			return
 		}
-
-		LogInfo("stage 2 ...")
-
-		sse.PatchSignals([]byte(`{"stage2": true}`))
-		sse.PatchElementTempl(VisitStage2(vm))
-
+		sse := datastar.NewSSE(w, r)
+		time.Sleep(3 * time.Second)
+		sse.PatchElementTempl(Thanks())
+		LogInfo("stage 2 finished and redirecting")
 	}
 }

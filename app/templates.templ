@@ -69,70 +69,74 @@ templ VisitStage1(vm visitVM) {
 
 templ VisitStage2(vm visitVM) {
 	<div id="visit">
-		<section id="stage1" data-show="!$stage2">
-			@VisitSharedForm(vm)
-		</section>
-		<section id="stage2" data-show="$stage2">
-			<h2>Does this look ok?</h2>
-			<hr/>
-			<p>visit date: { vm.Date }</p>
-			<p>visit duration: { vm.Duration }</p>
-			<p>visit notes: { vm.Notes }</p>
-			<hr/>
-			<form>
-				<input type="hidden" name="location-id" value={ vm.LocationId }/>
-				<input type="hidden" name="visit-date" value={ vm.Date }/>
-				<input type="hidden" name="visit-duration" value={ vm.Duration }/>
-				<input type="hidden" name="visit-notes" value={ vm.Notes }/>
-				<input type="hidden" name="validated-confirmed" value="true"/>
-				{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", vm.LocationId) }}
-				<button type="submit" data-on:click={ action }>Yes</button>
-				<button type="reset" data-on:click="$stage2 = false">No</button>
-			</form>
-		</section>
+		@VisitSharedForm(vm)
 	</div>
 }
 
 templ VisitSharedForm(lv visitVM) {
 	<style>
 		.box {padding: 12px}
+		.show {display: block;}
+		.hide {display: none;}
 	</style>
-	<h2>Complete the form</h2>
-	<form enctype="multipart/form-data" id="visit-form">
-		<input type="hidden" name="location-id" value={ lv.LocationId }/>
-		<input type="hidden" name="location-name" value={ lv.LocationName }/>
-		<input type="hidden" name="customer-name" value={ lv.CustomerName }/>
-		<!-- Date -->
-		<div class="box">
-			<label for="visit-date">Visit date: </label>
-			<input
-				type="date"
-				id="visit-date"
-				name="visit-date"
-				value={ lv.Date }
-			/>
+	<div data-signals="{preview: false}">
+		<div class="panel-1" data-class:hide="$preview">
+			<h2>Complete the form</h2>
+			<form enctype="multipart/form-data" id="visit-form">
+				<input type="hidden" name="location-id" value={ lv.LocationId }/>
+				<input type="hidden" name="location-name" value={ lv.LocationName }/>
+				<input type="hidden" name="customer-name" value={ lv.CustomerName }/>
+				<!-- Date -->
+				<div class="box">
+					<label for="visit-date">Visit date: </label>
+					<input
+						type="date"
+						id="visit-date"
+						name="visit-date"
+						value={ lv.Date }
+						data-bind:visit-date
+					/>
+				</div>
+				<!-- Duration -->
+				<div class="box">
+					<label for="visit-duration">Duration: </label>
+					<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ lv.Duration } data-bind:visit-duration/>
+				</div>
+				<!-- Notes -->
+				<div class="box">
+					<label for="visit-notes">Notes:</label>
+					<textarea name="visit-notes" id="visit-notes" placeholder="notes..." data-bind:visit-notes></textarea>
+				</div>
+				<div class="box">
+					<label for="original-photos">Upload images</label>
+					<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+				</div>
+			</form>
+			<button data-on:click="$preview = true">Stage 2</button>
 		</div>
-		<!-- Duration -->
-		<div class="box">
-			<label for="visit-duration">Duration: </label>
-			<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ lv.Duration }/>
+		<div class="panel-2" data-class="{show: $preview, hide: !$preview}" class="hide">
+			<h2>Here is what you are going to upload</h2>
+			<div><b>Date:</b> <span data-text="$visitDate"></span></div>
+			<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
+			<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
+			{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form', selector: '#visit-form'})", lv.LocationId) }}
+			<button data-on:click="$preview = !$preview">Back</button>
+			<button
+				data-on:click={ action }
+				data-indicator:fetching
+				data-attr:disabled="$fetching"
+			>Submit</button>
+			<div data-show="$fetching">Loading...</div>
 		</div>
-		<!-- Notes -->
-		<div class="box">
-			<label for="visit-notes">Notes:</label>
-			<textarea name="visit-notes" id="visit-notes" placeholder="notes..."></textarea>
-		</div>
-		<div class="box">
-			<label for="original-photos">Upload images</label>
-			<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-		</div>
-		<hr/>
-		{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", lv.LocationId) }}
-		<button data-on:click={ action }>Submit</button>
-	</form>
+	</div>
 }
 
-templ Navlink() {
+templ Thanks() {
+	<div id="visit">
+		<h2>Thanks</h2>
+		<p>Data uploaded</p>
+		<p><a href="/">&lt; back home</a></p>
+	</div>
 }
 
 templ ErrorPage() {

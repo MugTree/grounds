@@ -98,7 +98,7 @@ templ VisitSharedForm(lv visitVM) {
 		.box {padding: 12px}
 	</style>
 	<h2>Complete the form</h2>
-	<form>
+	<form enctype="multipart/form-data" id="visit-form">
 		<input type="hidden" name="location-id" value={ lv.LocationId }/>
 		<input type="hidden" name="location-name" value={ lv.LocationName }/>
 		<input type="hidden" name="customer-name" value={ lv.CustomerName }/>
@@ -123,17 +123,13 @@ templ VisitSharedForm(lv visitVM) {
 			<textarea name="visit-notes" id="visit-notes" placeholder="notes..."></textarea>
 		</div>
 		<div class="box">
-			<label for="visit-photos">Upload images</label>
-			<input id="visit-photos" name="visit-photos" type="file" accept="image/*" capture="environment" multiple/>
+			<label for="original-photos">Upload images</label>
+			<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
 		</div>
 		<hr/>
 		{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form'})", lv.LocationId) }}
 		<button data-on:click={ action }>Submit</button>
 	</form>
-	<script>
-		const photos = []
-		document.getElementById("visit-photos").addEventListener("change", function(e) {console.log(e)})	
-	</script>
 }
 
 templ Navlink() {
@@ -147,10 +143,14 @@ templ ErrorPage() {
 
 templ TestPage() {
 	@Layout() {
-		<div>i am a test page</div>
-		<select name="status" required>
-			<option value="">Choose one</option>
-			<option value="ok">OK</option>
-		</select>
+		<div>form test</div>
+		<form enctype="multipart/form-data" id="visit-form" action="/visit/add/3/" method="post">
+			<div class="box">
+				<label for="updated-photos">Upload images</label>
+				<input id="updated-photos" name="updated-photos" type="file" accept="image/*" capture="environment" multiple/>
+			</div>
+			<hr/>
+			<button type="submit">Submit</button>
+		</form>
 	}
 }

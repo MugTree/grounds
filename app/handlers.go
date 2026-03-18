@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -91,6 +92,27 @@ func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
 func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("http: multipart form error - %v", err), http.StatusBadRequest)
+			return
+		}
+
+		// check the images are ok?
+		// ---------------------------------------------
+		files := r.MultipartForm.File["original-photos"]
+		for _, header := range files {
+
+			fmt.Println("------------------------------------")
+			fmt.Println(header.Filename)
+
+			file, err := header.Open()
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+		}
+
 		date := r.FormValue("visit-date")
 		duration := r.FormValue("visit-duration")
 		notes := r.FormValue("visit-notes")
@@ -98,6 +120,8 @@ func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
 		locationName := r.FormValue("location-name")
 		customerName := r.FormValue("customer-name")
 		validatedConfirmed := r.FormValue("validated-confirmed")
+
+		godump.Dump(date, duration, notes, locationId, locationName, customerName, validatedConfirmed)
 
 		var isValid = true
 

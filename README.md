@@ -22,3 +22,40 @@ spent some time doing some js stuff this morning dont think i would have ever go
 ```chatgpt
 evt.target.files remains the original files selected by the user, and browsers do not let you directly overwrite input.files with arbitrary blobs for security reasons (except via a constructed DataTransfer object).
 ```
+
+## Vist creation
+
+The handler that handles the visit. Can remove the validation step there.
+
+The idea here is to rejig the html form into a 2 panel toggle.
+
+The first button the users presses validates the form and if valid hides the fields in a display none div.
+A preview / review panel is then toggled in with the values in - written in by js - where the user can see their "input" before they submit.
+
+In this review panel will be two buttons, a button that toggles back to the form panel so they can make adustments - and a submit button. T
+
+he submit button will call the bandler as is more or less. Any validation added on the handler, possible....?
+
+The handler now has to be rejigged.
+
+1). We'll need a writable directory on the host to write the images to.
+2). Well need a process of tying all the cross table data together
+
+use the last_insert_id eg.
+
+```sql
+INSERT INTO vist (names...) VALUES (values...);
+```
+
+This will return a last_insert_id that we use as the visit_id for each image added tothe images table.
+
+So for each image ...
+
+    create a filename hash
+    save to disk
+    insert into images storing the hash so we can ref it in the app
+    maybe create a thumbnail at this point as well
+
+.
+
+Return some HTML to tell the user the visit is complete..

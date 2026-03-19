@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -89,71 +88,16 @@ func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func handleVisitPost(db *sqlx.DB) http.HandlerFunc {
+func handleVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		err := r.ParseMultipartForm(10 << 20)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("http: multipart form error - %v", err), http.StatusBadRequest)
-			return
-		}
-
-		// check the images are ok?
-		// ---------------------------------------------
-		files := r.MultipartForm.File["original-photos"]
-		for _, header := range files {
-
-			fmt.Println("------------------------------------")
-			fmt.Println(header.Filename)
-
-			file, err := header.Open()
-			if err != nil {
-				continue
-			}
-			defer file.Close()
-		}
-
-		date := r.FormValue("visit-date")
-		duration := r.FormValue("visit-duration")
-		notes := r.FormValue("visit-notes")
-		locationId := r.FormValue("location-id")
-		locationName := r.FormValue("location-name")
-		customerName := r.FormValue("customer-name")
-
-		godump.Dump(date, duration, notes, locationId, locationName, customerName)
-
-		res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
-
-		/*
-
-			1). We'll need a writable directory on the host to write the images to.
-			2). Well need a process of tying all the cross table data together
-
-			use the last_insert_id eg.
-
-			This will return a last_insert_id that we use as the visit_id for each image added tothe images table.
-
-			So for each image ...
-
-			    create a filename hash
-			    save to disk
-			    insert into images storing the hash so we can ref it in the app
-			    maybe create a thumbnail at this point as well
-
-
-		*/
-
-		if err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
-			return
-		}
-
-		rows, _ := res.RowsAffected()
-		if rows != 1 {
-			renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
-			return
-		}
 		sse := datastar.NewSSE(w, r)
+		ok := logVisit(db, w, r, uploadsDir)
+		if !ok {
+			sse.PatchElementTempl(VisitError())
+			return
+		}
+
 		time.Sleep(3 * time.Second)
 		sse.PatchElementTempl(Thanks())
 		LogInfo("stage 2 finished and redirecting")

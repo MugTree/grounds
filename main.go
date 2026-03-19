@@ -46,6 +46,7 @@ func run(parent context.Context) error {
 
 	dbPath := mustEnv("VT_APP_DB")
 	appPort := mustEnv("VT_APP_PORT")
+	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
 
 	db, err := sqlx.Open("sqlite", dbPath)
 	if err != nil {
@@ -59,7 +60,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.AppSetup(db)
+			return app.AppSetup(db, uploadsDir)
 		}
 	}
 

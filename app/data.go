@@ -104,6 +104,64 @@ func handleLocationError(
 	)
 }
 
+// render errors here
+func logVisit(db *sqlx.DB, w http.ResponseWriter, r *http.Request, uploadsDir string) bool {
+
+	// form could contain images
+	err := r.ParseMultipartForm(10 << 20)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("http: multipart form error - %v", err), http.StatusBadRequest)
+		return false
+	}
+
+	//TODO - add to migration
+	// date := r.FormValue("visit-date")
+	// duration := r.FormValue("visit-duration")
+	notes := r.FormValue("visit-notes")
+	locationId := r.FormValue("location-id")
+
+	res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
+
+	if err != nil {
+		renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
+		return false
+	}
+
+	rows, _ := res.RowsAffected()
+	if rows != 1 {
+		renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
+		return false
+	}
+
+	fmt.Printf("uploads: %s", uploadsDir)
+
+	// check to see if images included
+	files := r.MultipartForm.File["original-photos"]
+
+	if len(files) > 0 {
+
+		visitId, _ := res.LastInsertId()
+		fmt.Println(visitId)
+
+		files := r.MultipartForm.File["original-photos"]
+		for _, header := range files {
+
+			// write file
+			// write sql
+			fmt.Println(header.Filename)
+
+			file, err := header.Open()
+			if err != nil {
+				continue
+			}
+			defer file.Close()
+		}
+
+	}
+
+	return true
+}
+
 const (
 	// --------------------------------------
 

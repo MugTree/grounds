@@ -29,7 +29,7 @@ var (
 	show employees
 */
 
-func AppSetup(db *sqlx.DB) chi.Router {
+func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", hashfs.FileServer(StaticSys))
 
@@ -42,7 +42,7 @@ func AppSetup(db *sqlx.DB) chi.Router {
 		r.Post("/", handleHomepagePost(db))
 		r.Route("/add", func(r chi.Router) {
 			r.Get("/{location_id}/", handleVisitGet(db))
-			r.Post("/{location_id}/", handleVisitPost(db))
+			r.Post("/{location_id}/", handleVisitPost(db, uploadsDir))
 		})
 	})
 
@@ -56,6 +56,7 @@ func staticPath(format string, args ...any) string {
 	return "/" + StaticSys.HashName(fmt.Sprintf("public/"+format, args...))
 }
 
+// this needs to return an error code as well???
 func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
 	LogError(msg)
 	ErrorPage().Render(r.Context(), w)

@@ -79,8 +79,8 @@ templ VisitSharedForm(lv visitVM) {
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-	<div data-signals="{preview: false}">
-		<div class="panel-1" data-class:hide="$preview">
+	<div data-signals="{_preview: false}">
+		<div class="panel-1" data-show="!$_preview">
 			<h2>Complete the form</h2>
 			<form enctype="multipart/form-data" id="visit-form">
 				<input type="hidden" name="location-id" value={ lv.LocationId }/>
@@ -112,15 +112,15 @@ templ VisitSharedForm(lv visitVM) {
 					<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
 				</div>
 			</form>
-			<button data-on:click="$preview = true">Stage 2</button>
+			<button data-on:click="$_preview = true">Stage 2</button>
 		</div>
-		<div class="panel-2" data-class="{show: $preview, hide: !$preview}" class="hide">
+		<div class="panel-2" data-show="$_preview" class="hide">
 			<h2>Here is what you are going to upload</h2>
 			<div><b>Date:</b> <span data-text="$visitDate"></span></div>
 			<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
 			<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
 			{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form', selector: '#visit-form'})", lv.LocationId) }}
-			<button data-on:click="$preview = !$preview">Back</button>
+			<button data-on:click="$_preview = !$_preview">Back</button>
 			<button
 				data-on:click={ action }
 				data-indicator:fetching
@@ -135,6 +135,14 @@ templ Thanks() {
 	<div id="visit">
 		<h2>Thanks</h2>
 		<p>Data uploaded</p>
+		<p><a href="/">&lt; back home</a></p>
+	</div>
+}
+
+templ VisitError() {
+	<div id="visit">
+		<h2>Hmm, there's been an error</h2>
+		<p>Check the logs...</p>
 		<p><a href="/">&lt; back home</a></p>
 	</div>
 }

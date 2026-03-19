@@ -56,6 +56,12 @@ So for each image ...
     insert into images storing the hash so we can ref it in the app
     maybe create a thumbnail at this point as well
 
-.
-
 Return some HTML to tell the user the visit is complete..
+
+Spend about 3 hours today creating the file upload sql. Hit a few snags one of them was to do with not importing "image/jpeg" which is what allows go to image.DecodeConfig.
+
+TODO -
+
+Add those extra fields and create the thumbs on the preview
+Add pico CSS
+Wrap in a PWA

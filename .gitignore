@@ -4,3 +4,4 @@ bin
 .env*
 .DS_Store
 data/raw_pics
+uploads

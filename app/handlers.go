@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -91,9 +92,22 @@ func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
 func handleVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		ct := r.Header.Get("Content-Type")
+		if strings.HasPrefix(ct, "multipart/form-data") {
+			err := r.ParseMultipartForm(10 << 20)
+			if err != nil {
+				renderServerError(w, r, fmt.Sprintf("http: multipart form error - %v", err))
+			}
+		} else {
+			err := r.ParseForm()
+			if err != nil {
+				renderServerError(w, r, fmt.Sprintf("http: form parse error - %v", err))
+			}
+		}
+
 		sse := datastar.NewSSE(w, r)
-		ok := logVisit(db, w, r, uploadsDir)
-		if !ok {
+		if err := logVisit(db, r, uploadsDir); err != nil {
+			renderServerError(w, r, err.Error())
 			sse.PatchElementTempl(VisitError())
 			return
 		}

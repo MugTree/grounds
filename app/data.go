@@ -8,11 +8,17 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/jpeg"
+	_ "image/jpeg"
+	"os"
+	"path/filepath"
+
 	"io"
 	"net/http"
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/image/draw"
 )
 
 type HomepageVm struct {
@@ -110,79 +116,139 @@ func handleLocationError(
 	)
 }
 
-// render errors here
-func logVisit(db *sqlx.DB, w http.ResponseWriter, r *http.Request, uploadsDir string) bool {
+func logVisit(db *sqlx.DB, r *http.Request, uploadsDir string) error {
 
-	// form could contain images
-	err := r.ParseMultipartForm(10 << 20)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("http: multipart form error - %v", err), http.StatusBadRequest)
-		return false
-	}
-
-	//TODO - add to migration
-	// date := r.FormValue("visit-date")
-	// duration := r.FormValue("visit-duration")
 	notes := r.FormValue("visit-notes")
 	locationId := r.FormValue("location-id")
 
-	res, err := db.Exec(InsertVisitSql, locationId, 1, notes)
-
+	tx, err := db.Beginx()
 	if err != nil {
-		renderServerError(w, r, fmt.Sprintf("sql: error updating visit table - %v", err))
-		return false
+		return err
+	}
+	defer tx.Rollback()
+
+	res, err := tx.Exec(InsertVisitSql, locationId, 1, notes)
+	if err != nil {
+		return fmt.Errorf("sql: insert visit failed - %w", err)
 	}
 
-	rows, _ := res.RowsAffected()
-	if rows != 1 {
-		renderServerError(w, r, fmt.Sprintf("sql rows: weird number of rows effected on visit table - %v", rows))
-		return false
+	vid, err := res.LastInsertId()
+	if err != nil {
+		return err
 	}
 
-	fmt.Printf("uploads: %s\n", uploadsDir)
+	if r.MultipartForm != nil {
+		photos := r.MultipartForm.File["original-photos"]
 
-	// check to see if images included
-	files := r.MultipartForm.File["original-photos"]
-
-	if len(files) > 0 {
-
-		//visitId, _ := res.LastInsertId()
-
-		files := r.MultipartForm.File["original-photos"]
-		for _, fh := range files {
-
+		for _, fh := range photos {
 			file, err := fh.Open()
 			if err != nil {
-				renderServerError(w, r, fmt.Sprintf("image input: cant open the file- %s", fh.Filename))
-				return false
+				return fmt.Errorf("multipart: cannot open %s - %w", fh.Filename, err)
 			}
-			defer file.Close()
 
-			// _, ext, err := ValidateImageUpload(file)
-			// if err != nil {
-			// 	renderServerError(w, r, fmt.Sprintf("invalid input: - %v", err))
-			// 	return false
-			// }
-
-			ext := ".jpg"
-
-			path, err := generatePath(ext)
+			mimetype, ext, err := validateUpload(file)
 			if err != nil {
-				renderServerError(w, r, fmt.Sprintf("path input: - %v", err))
-				return false
+				file.Close()
+				return fmt.Errorf("validateUpload: %s - %w", fh.Filename, err)
 			}
 
-			fmt.Printf("image path: %s", path)
+			_, err = file.Seek(0, 0)
+			if err != nil {
+				file.Close()
+				return err
+			}
 
+			relPath, err := generatePath(ext)
+			if err != nil {
+				file.Close()
+				return err
+			}
+
+			err = saveThumbnail(file, relPath, uploadsDir)
+			if err != nil {
+				file.Close()
+				return err
+			}
+
+			err = saveToDisk(file, relPath, uploadsDir)
+			file.Close()
+			if err != nil {
+				return fmt.Errorf("saveToDisk: %w", err)
+			}
+
+			_, err = tx.ExecContext(
+				r.Context(),
+				SaveImageSql,
+				vid,
+				relPath,
+				fh.Filename,
+				mimetype,
+				fh.Size,
+			)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	return true
+	return tx.Commit()
 }
 
-// this doesnt appear to work
-// read carefully through all of this code
-func ValidateImageUpload(file io.ReadSeeker) (string, string, error) {
+func saveThumbnail(src io.Reader, relPath, uploadsDir string) error {
+	img, _, err := image.Decode(src)
+	if err != nil {
+		return err
+	}
+
+	bounds := img.Bounds()
+
+	const thumbWidth = 300
+	thumbHeight := bounds.Dy() * thumbWidth / bounds.Dx()
+
+	dstImg := image.NewRGBA(image.Rect(0, 0, thumbWidth, thumbHeight))
+
+	draw.CatmullRom.Scale(
+		dstImg,
+		dstImg.Bounds(),
+		img,
+		bounds,
+		draw.Over,
+		nil,
+	)
+
+	thumbPath := filepath.Join(uploadsDir, "thumbs", relPath)
+
+	err = os.MkdirAll(filepath.Dir(thumbPath), 0755)
+	if err != nil {
+		return err
+	}
+
+	tmpPath := thumbPath + ".tmp"
+
+	f, err := os.Create(tmpPath)
+	if err != nil {
+		return err
+	}
+
+	err = jpeg.Encode(f, dstImg, &jpeg.Options{Quality: 85})
+	closeErr := f.Close()
+
+	if err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+
+	if closeErr != nil {
+		os.Remove(tmpPath)
+		return closeErr
+	}
+
+	return os.Rename(tmpPath, thumbPath)
+}
+
+// image.DecodeConfig proves that the file bytes are decodable as an image format the go actually understands
+// only allows jpges atm
+func validateUpload(file io.ReadSeeker) (string, string, error) {
 	buf := make([]byte, 512)
 
 	n, err := file.Read(buf)
@@ -207,18 +273,14 @@ func ValidateImageUpload(file io.ReadSeeker) (string, string, error) {
 		return "", "", err
 	}
 
-	switch mimeType {
-	case "image/jpeg":
-		return mimeType, ".jpg", nil
-	case "image/png":
-		return mimeType, ".png", nil
-	case "image/webp":
-		return mimeType, ".webp", nil
-	default:
+	if mimeType != "image/jpeg" {
 		return "", "", errors.New("unsupported image type")
 	}
+
+	return mimeType, ".jpg", nil
 }
 
+// eg. 2026/03/19/86d276d2b8970e96.jpg
 func generatePath(ext string) (string, error) {
 	b := make([]byte, 8)
 	_, err := rand.Read(b)
@@ -231,7 +293,44 @@ func generatePath(ext string) (string, error) {
 	return fmt.Sprintf("%s/%s%s", date, hex.EncodeToString(b), ext), nil
 }
 
+// creates the directories  before it creates the file and writes to disk
+func saveToDisk(src io.Reader, relPath, uploadsDir string) error {
+	fullPath := filepath.Join(uploadsDir, relPath)
+
+	err := os.MkdirAll(filepath.Dir(fullPath), 0755)
+	if err != nil {
+		return err
+	}
+
+	tmpPath := fullPath + ".tmp"
+
+	dst, err := os.Create(tmpPath)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(dst, src)
+	closeErr := dst.Close()
+
+	if err != nil {
+		os.Remove(tmpPath)
+		return err
+	}
+
+	if closeErr != nil {
+		os.Remove(tmpPath)
+		return closeErr
+	}
+
+	return os.Rename(tmpPath, fullPath)
+}
+
 const (
+
+	// --------------------------------------
+
+	SaveImageSql = `INSERT INTO images (visit_id, filename, original_name, mimetype, size, created_at) VALUES($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);`
+
 	// --------------------------------------
 
 	InsertVisitSql = `INSERT INTO visits (location_id, employee_id, notes) VALUES ($1, $2, $3);`

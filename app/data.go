@@ -2,9 +2,15 @@ package app
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
+	"errors"
 	"fmt"
+	"image"
+	"io"
 	"net/http"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -133,33 +139,96 @@ func logVisit(db *sqlx.DB, w http.ResponseWriter, r *http.Request, uploadsDir st
 		return false
 	}
 
-	fmt.Printf("uploads: %s", uploadsDir)
+	fmt.Printf("uploads: %s\n", uploadsDir)
 
 	// check to see if images included
 	files := r.MultipartForm.File["original-photos"]
 
 	if len(files) > 0 {
 
-		visitId, _ := res.LastInsertId()
-		fmt.Println(visitId)
+		//visitId, _ := res.LastInsertId()
 
 		files := r.MultipartForm.File["original-photos"]
-		for _, header := range files {
+		for _, fh := range files {
 
-			// write file
-			// write sql
-			fmt.Println(header.Filename)
-
-			file, err := header.Open()
+			file, err := fh.Open()
 			if err != nil {
-				continue
+				renderServerError(w, r, fmt.Sprintf("image input: cant open the file- %s", fh.Filename))
+				return false
 			}
 			defer file.Close()
-		}
 
+			// _, ext, err := ValidateImageUpload(file)
+			// if err != nil {
+			// 	renderServerError(w, r, fmt.Sprintf("invalid input: - %v", err))
+			// 	return false
+			// }
+
+			ext := ".jpg"
+
+			path, err := generatePath(ext)
+			if err != nil {
+				renderServerError(w, r, fmt.Sprintf("path input: - %v", err))
+				return false
+			}
+
+			fmt.Printf("image path: %s", path)
+
+		}
 	}
 
 	return true
+}
+
+// this doesnt appear to work
+// read carefully through all of this code
+func ValidateImageUpload(file io.ReadSeeker) (string, string, error) {
+	buf := make([]byte, 512)
+
+	n, err := file.Read(buf)
+	if err != nil {
+		return "", "", err
+	}
+
+	mimeType := http.DetectContentType(buf[:n])
+
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return "", "", err
+	}
+
+	_, _, err = image.DecodeConfig(file)
+	if err != nil {
+		return "", "", errors.New("invalid image data")
+	}
+
+	_, err = file.Seek(0, 0)
+	if err != nil {
+		return "", "", err
+	}
+
+	switch mimeType {
+	case "image/jpeg":
+		return mimeType, ".jpg", nil
+	case "image/png":
+		return mimeType, ".png", nil
+	case "image/webp":
+		return mimeType, ".webp", nil
+	default:
+		return "", "", errors.New("unsupported image type")
+	}
+}
+
+func generatePath(ext string) (string, error) {
+	b := make([]byte, 8)
+	_, err := rand.Read(b)
+	if err != nil {
+		return "", err
+	}
+
+	date := time.Now().UTC().Format("2006/01/02")
+
+	return fmt.Sprintf("%s/%s%s", date, hex.EncodeToString(b), ext), nil
 }
 
 const (

@@ -440,7 +440,7 @@ func VisitSharedForm(lv visitVM) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-bind:visit-duration></div><!-- Notes --><div class=\"box\"><label for=\"visit-notes\">Notes:</label> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"notes...\" data-bind:visit-notes></textarea></div><div class=\"box\"><label for=\"original-photos\">Upload images</label> <input class=\"original-photos\" data-on:change=\"resizePhotos(evt)\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></div></form><button data-on:click=\"$_preview = true\">Stage 2</button></div><div class=\"panel-2\" data-show=\"$_preview\" class=\"hide\"><h2>Here is what you are going to upload</h2><div><b>Date:</b> <span data-text=\"$visitDate\"></span></div><div><b>Duration:</b> <span data-text=\"$visitDuration\"></span></div><div><b>Notes:</b> <span data-text=\"$visitNotes\"></span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-bind:visit-duration></div><!-- Notes --><div class=\"box\"><label for=\"visit-notes\">Notes:</label> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"notes...\" data-bind:visit-notes></textarea></div><div class=\"box\"><label for=\"original-photos\">Upload images</label><input class=\"original-photos\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></div></form><button data-on:click=\"$_preview = true\">Stage 2</button></div><div class=\"panel-2\" data-show=\"$_preview\" class=\"hide\"><h2>Here is what you are going to upload</h2><div><b>Date:</b> <span data-text=\"$visitDate\"></span></div><div><b>Duration:</b> <span data-text=\"$visitDuration\"></span></div><div><b>Notes:</b> <span data-text=\"$visitNotes\"></span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -452,7 +452,7 @@ func VisitSharedForm(lv visitVM) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(action)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 125, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 126, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {

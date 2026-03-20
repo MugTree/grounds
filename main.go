@@ -15,7 +15,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 
-	_ "modernc.org/sqlite"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
@@ -48,7 +48,7 @@ func run(parent context.Context) error {
 	appPort := mustEnv("VT_APP_PORT")
 	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
 
-	db, err := sqlx.Open("sqlite", dbPath)
+	db, err := sqlx.Open("sqlite3", dbPath)
 	if err != nil {
 		return fmt.Errorf("sql: error opening DB - %v", err)
 	}

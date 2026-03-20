@@ -2,11 +2,10 @@ package app
 
 import (
 	"embed"
-	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
-	"github.com/benbjohnson/hashfs"
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 )
@@ -15,9 +14,9 @@ import (
 //go:embed public/js/*.js
 var staticFS embed.FS
 
-var (
-	StaticSys = hashfs.NewFS(staticFS)
-)
+// var (
+// 	StaticSys = hashfs.NewFS(staticFS)
+// )
 
 // admin features
 /*
@@ -31,7 +30,8 @@ var (
 
 func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	r := chi.NewRouter()
-	r.Handle("/public/*", hashfs.FileServer(StaticSys))
+	fs := http.FileServerFS(staticFS)
+	r.Handle("/public/*", neuter(fs))
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/visit/", 303)
@@ -52,14 +52,21 @@ func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	return r
 }
 
-func staticPath(format string, args ...any) string {
-	return "/" + StaticSys.HashName(fmt.Sprintf("public/"+format, args...))
-}
-
 // this needs to return an error code as well???
 func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
 	LogError(msg)
 	ErrorPage().Render(r.Context(), w)
+}
+
+func neuter(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }
 
 func LogInfo(msg string)  { log.Println("INFO: " + msg) }

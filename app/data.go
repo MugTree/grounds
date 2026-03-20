@@ -322,7 +322,12 @@ func saveToDisk(src io.Reader, relPath, uploadsDir string) error {
 		return closeErr
 	}
 
-	return os.Rename(tmpPath, fullPath)
+	err = os.Rename(tmpPath, fullPath)
+	if err != nil {
+		return fmt.Errorf("this is the error: %v", err)
+	}
+
+	return nil
 }
 
 const (

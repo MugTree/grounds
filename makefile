@@ -31,7 +31,7 @@ start-dev:
 #	make -j 3  templ serve sync_assets
 
 production-build-app:
-	templ generate && GOOS=linux GOARCH=amd64  go build -o ./bin/server .
+	templ generate && CC=x86_64-linux-musl-gcc CXX=x86_64-linux-musl-g++ GOARCH=amd64 GOOS=linux CGO_ENABLED=1 go build -ldflags "-linkmode external -extldflags -static" -o ./bin/server .
 
 vps-publish:
 	./scripts/upload_site_to_vps.sh

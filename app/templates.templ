@@ -9,12 +9,12 @@ templ Layout() {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Document</title>
-			<script type="module" src={ staticPath("js/datastar.js") }></script>
-			<link href={ staticPath("css/main.css") } rel="stylesheet"/>
+			<script type="module" src="/public/js/datastar.js"></script>
+			<link href="/public/css/main.css" rel="stylesheet"/>
 		</head>
 		<body>
 			{ children... }
-			<script src={ staticPath("js/script.js") }></script>
+			<script src="/public/js/script.js"></script>
 		</body>
 	</html>
 }
@@ -112,6 +112,10 @@ templ VisitSharedForm(lv visitVM) {
 					<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
 					//<input class="original-photos" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
 				</div>
+				<hr/>
+				<div id="thumbs">
+					<!-- thumbnails-->
+				</div>
 			</form>
 			<button data-on:click="$_preview = true">Stage 2</button>
 		</div>
@@ -128,6 +132,7 @@ templ VisitSharedForm(lv visitVM) {
 				data-attr:disabled="$fetching"
 			>Submit</button>
 			<div data-show="$fetching">Loading...</div>
+			<div id="thumbs2"></div>
 		</div>
 	</div>
 }

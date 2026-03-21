@@ -20,13 +20,10 @@ async function resizeImage(file, maxWidth = 1200, quality = 0.8) {
 }
 
 async function resizePhotos(evt) {
-  const files = Array.from(evt.target.files);
+  const input = evt.target;
+  const files = Array.from(input.files);
 
-  thumbs.length = 0; // clear previous thumbs
-
-  const dt = new DataTransfer();
-
-  let i = 1;
+  let i = thumbs.length + 1;
 
   for (const file of files) {
     const smaller = await resizeImage(file);
@@ -44,17 +41,32 @@ async function resizePhotos(evt) {
       file: uploadFile,
     });
 
-    dt.items.add(uploadFile);
     i++;
   }
 
-  evt.target.files = dt.files;
+  rebuildFiles(input);
+  renderThumbs(input);
 
-  renderThumbs(evt.target);
+  input.value = "";
+}
+
+function rebuildFiles(input) {
+  const dt = new DataTransfer();
+
+  thumbs.forEach((item) => dt.items.add(item.file));
+
+  input.files = dt.files;
 }
 
 function renderThumbs(input) {
-  document.querySelectorAll(".thumb-preview").forEach((el) => el.remove());
+  const active = document.getElementById("thumbs");
+  const passive = document.getElementById("thumbs2");
+
+  active.innerHTML = "";
+  passive.innerHTML = "";
+
+  const activeFrag = document.createDocumentFragment();
+  const passiveFrag = document.createDocumentFragment();
 
   thumbs.forEach((t, index) => {
     const img = document.createElement("img");
@@ -63,6 +75,7 @@ function renderThumbs(input) {
     img.className = "thumb-preview";
     img.style.width = "100px";
     img.style.cursor = "pointer";
+    img.style.margin = "4px";
     img.title = "Click to remove";
 
     img.onclick = () => {
@@ -70,21 +83,19 @@ function renderThumbs(input) {
 
       thumbs.splice(index, 1);
 
-      const dt = new DataTransfer();
-
-      thumbs.forEach((item) => dt.items.add(item.file));
-
-      input.files = dt.files;
-
+      rebuildFiles(input);
       renderThumbs(input);
     };
 
-    document.getElementById("thumbs").appendChild(img);
+    activeFrag.appendChild(img);
 
     const clone = img.cloneNode(true);
     clone.style.cursor = "default";
     clone.title = "";
 
-    document.getElementById("thumbs2").appendChild(clone);
+    passiveFrag.appendChild(clone);
   });
+
+  active.appendChild(activeFrag);
+  passive.appendChild(passiveFrag);
 }

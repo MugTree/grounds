@@ -46,7 +46,7 @@ func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 		r.Post("/{customer_id}/choose-location", chooseLocationPost(db))
 		r.Get("/{location_id}/log-visit", logVisitGet(db))
 		r.Post("/{location_id}/log-visit", logVisitPost(db, uploadsDir))
-		r.Get("/{location_id}/visit-logged", confirmVisit(db))
+		r.Get("/{location_id}/complete", confirmVisit(db))
 	})
 
 	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {

@@ -316,38 +316,43 @@ func LogVisit(vm visitVM) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<style>\n\t\t.box {padding: 12px}\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <div data-signals=\"{_preview: false}\"><h2>Complete the form</h2><form enctype=\"multipart/form-data\" id=\"visit-form\" action=\"log-visit\"><div class=\"panel-1\" data-show=\"!$_preview\"><input type=\"hidden\" name=\"location-id\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<style>\n\t\t.box {padding: 12px}\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <div data-signals=\"{_preview: false}\"><h2>Complete the form</h2>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var13 string
-			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationId)
+			action := fmt.Sprintf("log-visit")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<form enctype=\"multipart/form-data\" method=\"post\" id=\"visit-form\" action=\"")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 96, Col: 66}
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 templ.SafeURL
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(action)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 95, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"> <input type=\"hidden\" name=\"location-name\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"><div class=\"panel-1\" data-show=\"!$_preview\"><input type=\"hidden\" name=\"location-id\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
-			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationName)
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationId)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 97, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 97, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"> <input type=\"hidden\" name=\"customer-name\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"> <input type=\"hidden\" name=\"location-name\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerName)
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationName)
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 98, Col: 70}
 			}
@@ -355,51 +360,46 @@ func LogVisit(vm visitVM) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"><!-- Date --><div class=\"box\"><label for=\"visit-date\">Visit date: </label> <input type=\"date\" id=\"visit-date\" name=\"visit-date\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"> <input type=\"hidden\" name=\"customer-name\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Date)
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 106, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 99, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" data-bind:visit-date></div><!-- Duration --><div class=\"box\"><label for=\"visit-duration\">Duration: </label> <input type=\"range\" id=\"visit-duration\" name=\"visit-duration\" min=\"15\" max=\"300\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><!-- Date --><div class=\"box\"><label for=\"visit-date\">Visit date: </label> <input type=\"date\" id=\"visit-date\" name=\"visit-date\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Duration)
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Date)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 113, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 107, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" data-bind:visit-duration></div><!-- Notes --><div class=\"box\"><label for=\"visit-notes\">Notes:</label> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"notes...\" data-bind:visit-notes></textarea></div><div class=\"box\"><label for=\"original-photos\">Upload images</label> <input class=\"original-photos\" data-on:change=\"resizePhotos(evt)\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></div><hr><div id=\"thumbs\"><!-- thumbnails--></div><button type=\"button\" data-on:click=\" $_preview = true\">Stage 2</button></div><div class=\"panel-2\" data-show=\"$_preview\" style=\"display: none;\"><h2>Here is what you are going to upload</h2><div><b>Date:</b> <span data-text=\"$visitDate\"></span></div><div><b>Duration:</b> <span data-text=\"$visitDuration\"></span></div><div><b>Notes:</b> <span data-text=\"$visitNotes\"></span></div>")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			action := fmt.Sprintf("@post('/visits/%v/log-visit', {contentType: 'form', selector: '#visit-form'})", vm.LocationId)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<button type=\"button\" data-on:click=\"$_preview = false\">Back</button> <button data-on:click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-bind:visit-date></div><!-- Duration --><div class=\"box\"><label for=\"visit-duration\">Duration: </label> <input type=\"range\" id=\"visit-duration\" name=\"visit-duration\" min=\"15\" max=\"300\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(action)
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(vm.Duration)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 138, Col: 28}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 114, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-indicator:fetching data-attr:disabled=\"$fetching\">Submit</button><div data-show=\"$fetching\">Loading...</div><div id=\"thumbs2\"></div></div></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-bind:visit-duration></div><!-- Notes --><div class=\"box\"><label for=\"visit-notes\">Notes:</label> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"notes...\" data-bind:visit-notes></textarea></div><div class=\"box\"><label for=\"original-photos\">Upload images</label> <input class=\"original-photos\" data-on:change=\"resizePhotos(evt)\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></div><hr><div id=\"thumbs\"><!-- thumbnails--></div><button type=\"button\" data-on:click=\" $_preview = true\">Stage 2</button></div><div class=\"panel-2\" data-show=\"$_preview\" style=\"display: none;\"><h2>Here is what you are going to upload</h2><div><b>Date:</b> <span data-text=\"$visitDate\"></span></div><div><b>Duration:</b> <span data-text=\"$visitDuration\"></span></div><div><b>Notes:</b> <span data-text=\"$visitNotes\"></span></div><button type=\"button\" data-on:click=\"$_preview = false\">Back</button> <button type=\"submit\" form=\"visit-form\">Submit</button><div data-show=\"$fetching\">Loading...</div><div id=\"thumbs2\"></div></div></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

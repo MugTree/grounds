@@ -162,7 +162,7 @@ func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			}
 		}
 
-		visitId, err := logVisit(db, w, r, uploadsDir)
+		visitId, err := logVisit(db, r, uploadsDir)
 		if err != nil {
 			renderServerError(w, r, err.Error())
 			return
@@ -171,14 +171,13 @@ func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 		time.Sleep(3 * time.Second)
 		LogInfo("stage 2 finished and redirecting")
 
-		url := fmt.Sprintf("/visits/%v/visit-logged", visitId)
+		url := fmt.Sprintf("/visits/%v/complete", visitId)
 		http.Redirect(w, r, url, http.StatusSeeOther)
 	}
 }
 
 func confirmVisit(_ *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(200)
-		w.Write([]byte("visit completed!"))
+		Thanks().Render(r.Context(), w)
 	}
 }

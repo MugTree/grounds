@@ -91,7 +91,8 @@ templ LogVisit(vm visitVM) {
 	</style>
 		<div data-signals="{_preview: false}">
 			<h2>Complete the form</h2>
-			<form enctype="multipart/form-data" id="visit-form" action="log-visit">
+			{{ action := fmt.Sprintf("log-visit") }}
+			<form enctype="multipart/form-data" method="post" id="visit-form" action={ action }>
 				<div class="panel-1" data-show="!$_preview">
 					<input type="hidden" name="location-id" value={ vm.LocationId }/>
 					<input type="hidden" name="location-name" value={ vm.LocationName }/>
@@ -132,13 +133,8 @@ templ LogVisit(vm visitVM) {
 					<div><b>Date:</b> <span data-text="$visitDate"></span></div>
 					<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
 					<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
-					{{ action := fmt.Sprintf("@post('/visits/%v/log-visit', {contentType: 'form', selector: '#visit-form'})", vm.LocationId) }}
 					<button type="button" data-on:click="$_preview = false">Back</button>
-					<button
-						data-on:click={ action }
-						data-indicator:fetching
-						data-attr:disabled="$fetching"
-					>Submit</button>
+					<button type="submit" form="visit-form">Submit</button>
 					<div data-show="$fetching">Loading...</div>
 					<div id="thumbs2"></div>
 				</div>

@@ -166,7 +166,7 @@ func handleLocationError(
 	)
 }
 
-func logVisit(db *sqlx.DB, r *http.Request, uploadsDir string) (int, error) {
+func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (int, error) {
 
 	notes := r.FormValue("visit-notes")
 	locationId := r.FormValue("location-id")

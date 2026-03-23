@@ -16,7 +16,7 @@ type JourneyData struct {
 
 const JourneyDataCookieName string = "journeydata"
 
-func chooseCustomerGet(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomer(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ok, customers, _ := getHomepageData(db, w, r)
@@ -28,7 +28,7 @@ func chooseCustomerGet(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseCustomerPost(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -53,7 +53,7 @@ func chooseCustomerPost(db *sqlx.DB) http.HandlerFunc {
 
 // ----------------------------------------------------------------------------------
 
-func chooseLocationGet(db *sqlx.DB) http.HandlerFunc {
+func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
@@ -76,7 +76,7 @@ func chooseLocationGet(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseLocationPost(db *sqlx.DB) http.HandlerFunc {
+func choosteLocationSubmit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// hidden value
@@ -113,7 +113,7 @@ func chooseLocationPost(db *sqlx.DB) http.HandlerFunc {
 
 }
 
-func logVisitGet(db *sqlx.DB) http.HandlerFunc {
+func logVisit(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		locationId, ok := pathValueAsIntOrErr(w, r, "location_id")
@@ -146,7 +146,7 @@ func logVisitGet(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
+func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ct := r.Header.Get("Content-Type")
@@ -162,7 +162,7 @@ func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			}
 		}
 
-		visitId, err := logVisit(db, r, uploadsDir)
+		visitId, err := logVisitData(db, r, uploadsDir)
 		if err != nil {
 			renderServerError(w, r, err.Error())
 			return
@@ -176,7 +176,7 @@ func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	}
 }
 
-func confirmVisit(_ *sqlx.DB) http.HandlerFunc {
+func complete(_ *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		Thanks().Render(r.Context(), w)
 	}

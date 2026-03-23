@@ -10,10 +10,16 @@ templ Layout() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Document</title>
 			<script type="module" src="/public/js/datastar.js"></script>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+			/>
 			<link href="/public/css/main.css" rel="stylesheet"/>
 		</head>
 		<body>
-			{ children... }
+			<main>
+				{ children... }
+			</main>
 			<script src="/public/js/script.js"></script>
 		</body>
 	</html>
@@ -21,27 +27,19 @@ templ Layout() {
 
 templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
-		<section>
+		<section id="choose-customer">
 			<h1>Choose a customer...</h1>
 			<form action="choose-customer" method="post">
 				<select
 					id="customers-sel"
 					name="customer_id"
-					if vm.HasError == true {
-						name="invalid"
-						value="Invalid"
-						aria-invalid="true"
-					}
 				>
-					<option selected value="0">Customers...</option>
+					<option selected disabled value="0">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
 				<button type="submit">Submit</button>
-				if vm.HasError {
-					<p>Please choose a customer</p>
-				}
 			</form>
 		</section>
 	}
@@ -49,7 +47,7 @@ templ ChooseCustomer(vm PickCustomerVm) {
 
 templ ChooseLocation(vm PickLocationVm) {
 	@Layout() {
-		<section id="locations">
+		<section id="choose-location">
 			<h1>Choose a location...</h1>
 			<form action="choose-location" method="post">
 				if len(vm.Locations) != 0 {
@@ -59,21 +57,13 @@ templ ChooseLocation(vm PickLocationVm) {
 					<select
 						id="location-sel"
 						name="location_id"
-						if vm.HasError == true {
-							name="invalid"
-							value="Invalid"
-							aria-invalid="true"
-						}
 					>
-						<option selected value="0">Locations...</option>
+						<option selected disabled value="0">Locations...</option>
 						for _, l := range vm.Locations {
 							<option value={ l.Id }>{  } { l.Name }</option>
 						}
 					</select>
 					<button type="submit">Submit</button>
-					if vm.HasError {
-						<p>Please choose a customer</p>
-					}
 				} else {
 					<p>No locations configured: speak to admin</p>
 				}
@@ -85,15 +75,25 @@ templ ChooseLocation(vm PickLocationVm) {
 templ LogVisit(vm visitVM) {
 	@Layout() {
 		<style>
-		.box {padding: 12px}
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-		<div data-signals="{_preview: false}">
-			<h2>Complete the form</h2>
+		<div data-signals="{_preview: false}" id="log-visit">
+			<h1>Complete the form</h1>
 			{{ action := fmt.Sprintf("log-visit") }}
 			<form enctype="multipart/form-data" method="post" id="visit-form" action={ action }>
-				<div class="panel-1" data-show="!$_preview">
+				<div id="confirm" tabindex="-1">
+					<h1>Here is what you are going to upload</h1>
+					<div><b>Date:</b> <span data-text="$visitDate"></span></div>
+					<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
+					<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
+					<div class="grid">
+						<a role="button" id="back-btn" href="#" class="secondary" style="margin-bottom: var(--pico-spacing)">Back</a>
+						<button type="submit" form="visit-form">Submit</button>
+					</div>
+					<div id="thumbs2"></div>
+				</div>
+				<div id="log">
 					<input type="hidden" name="location-id" value={ vm.LocationId }/>
 					<input type="hidden" name="location-name" value={ vm.LocationName }/>
 					<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
@@ -126,29 +126,31 @@ templ LogVisit(vm visitVM) {
 					<div id="thumbs">
 						<!-- thumbnails-->
 					</div>
-					<button type="button" data-on:click=" $_preview = true">Stage 2</button>
-				</div>
-				<div class="panel-2" data-show="$_preview" style="display: none;">
-					<h2>Here is what you are going to upload</h2>
-					<div><b>Date:</b> <span data-text="$visitDate"></span></div>
-					<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
-					<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
-					<button type="button" data-on:click="$_preview = false">Back</button>
-					<button type="submit" form="visit-form">Submit</button>
-					<div data-show="$fetching">Loading...</div>
-					<div id="thumbs2"></div>
+					<a role="button" href="#confirm" tabindex="0" style="width: 100%">Confirm the visit</a>
 				</div>
 			</form>
 		</div>
+		<script>
+		
+			window.addEventListener("hashchange", () => {
+  if (location.hash === "#confirm") {
+	console.log("asdfadsf")
+    document.getElementById("confirm").focus();
+  }
+});
+		
+		</script>
 	}
 }
 
 templ Thanks() {
-	<div id="visit">
-		<h2>Thanks</h2>
-		<p>Data uploaded</p>
-		<p><a href="/">&lt; back home</a></p>
-	</div>
+	@Layout() {
+		<div id="confirmation">
+			<h1>Thanks</h1>
+			<p>Data uploaded</p>
+			<p><a href="/">&lt; back home</a></p>
+		</div>
+	}
 }
 
 templ VisitError() {

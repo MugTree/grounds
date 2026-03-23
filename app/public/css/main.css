@@ -1,0 +1,17 @@
+body > main,
+body > footer {
+  max-width: 700px;
+  margin-inline: auto;
+}
+
+#confirm {
+  display: none;
+}
+
+#confirm:target {
+  display: block;
+}
+
+#confirm:target + #log {
+  display: none;
+}

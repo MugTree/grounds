@@ -58,3 +58,8 @@ TODO -
 Add those extra fields and create the thumbs on the preview
 Add pico CSS
 Wrap in a PWA
+
+GET visit/pick-a-customer
+POST visit/pick-a-location
+POST visit/log-a-location
+visit/confirm-visit

@@ -12,6 +12,7 @@ import (
 	_ "image/jpeg"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"io"
 	"net/http"
@@ -30,10 +31,56 @@ type HomepageVm struct {
 	IsValid          bool
 }
 
+type PickCustomerVm struct {
+	Customers []Customer
+}
+
+type PickLocationVm struct {
+	Locations []Location
+}
+
 type homePageSignals struct {
 	CustomerId int `json:"customerId"`
 	LocationId int `json:"locationId"`
 }
+
+func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
+
+	formVal := r.FormValue(key)
+
+	if formVal == "" {
+		renderServerError(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
+		return 0, false
+	}
+
+	val, err := strconv.Atoi(formVal)
+	if err != nil {
+		renderServerError(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		return 0, false
+	}
+
+	return val, true
+
+}
+
+// func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
+
+// 	formVal := r.PathValue(key)
+
+// 	if formVal == "" {
+// 		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
+// 		return 0, false
+// 	}
+
+// 	val, err := strconv.Atoi(formVal)
+// 	if err != nil {
+// 		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
+// 		return 0, false
+// 	}
+
+// 	return val, true
+
+// }
 
 func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []Customer, []Location) {
 

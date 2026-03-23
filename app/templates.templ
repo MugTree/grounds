@@ -19,122 +19,111 @@ templ Layout() {
 	</html>
 }
 
-templ HomePage(vm HomepageVm) {
+templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
-		<p>Some app </p>
-		<hr/>
-		if len(vm.Customers) > 0 {
-			<section data-signals="{customerId: 0, locationId: 0}">
-				<h1>Choose a customer...</h1>
-				<select id="customers-sel" data-bind="customerId" data-on:change="($location !== 0) && @get('/visit/')">
+		<section>
+			<h1>Choose a customer...</h1>
+			<form action="/visits/choose-customer" method="post">
+				<select id="customers-sel" name="customer_id">
 					<option selected value="0">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
-				<button data-on:click="$locationId = 0; $customerId = parseInt($customerId); @post('/visit/')">Get customer</button>
-			</section>
-		}
-		if vm.ShowLocations {
-			<section id="locations">
-				if len(vm.Locations) > 0 {
-					<h2>Choose a location to visit...</h2>
-					<select name="location-sel" data-bind="locationId">
-						<option selected value="0">Locations...</option>
-						for _, l := range vm.Locations {
-							<option value={ l.Id }>{  } { l.Name }</option>
-						}
-					</select>
-					<button data-on:click="$locationId = parseInt($locationId); @post('/visit/')">Get location</button>
-				} else {
-					<p>No locations configured </p>
-				}
-			</section>
-		}
+				<button type="submit">Submit</button>
+			</form>
+		</section>
 	}
 }
 
-templ VisitStage1(vm visitVM) {
+templ ChooseLocation(vm PickLocationVm) {
+	@Layout() {
+		<section id="locations">
+			<h1>Choose a location...</h1>
+			<form action="/visits/choose-location" method="post">
+				<select id="location-sel" name="location_id">
+					<option selected value="0">Locations...</option>
+					for _, l := range vm.Locations {
+						<option value={ l.Id }>{  } { l.Name }</option>
+					}
+				</select>
+				<button type="submit">Submit</button>
+			</form>
+		</section>
+	}
+}
+
+templ LogVisit(vm visitVM) {
 	@Layout() {
 		<p>Some app | <a href="#" onclick="history.back(); return false;">Back</a></p>
 		<hr/>
 		<h1>Visit to { vm.CustomerName } - { vm.LocationName } </h1>
 		<div id="visit">
 			<section id="stage1">
-				@VisitSharedForm(vm)
-			</section>
-		</div>
-	}
-}
-
-templ VisitStage2(vm visitVM) {
-	<div id="visit">
-		@VisitSharedForm(vm)
-	</div>
-}
-
-templ VisitSharedForm(lv visitVM) {
-	<style>
+				<style>
 		.box {padding: 12px}
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-	<div data-signals="{_preview: false}">
-		<div class="panel-1" data-show="!$_preview">
-			<h2>Complete the form</h2>
-			<form enctype="multipart/form-data" id="visit-form">
-				<input type="hidden" name="location-id" value={ lv.LocationId }/>
-				<input type="hidden" name="location-name" value={ lv.LocationName }/>
-				<input type="hidden" name="customer-name" value={ lv.CustomerName }/>
-				<!-- Date -->
-				<div class="box">
-					<label for="visit-date">Visit date: </label>
-					<input
-						type="date"
-						id="visit-date"
-						name="visit-date"
-						value={ lv.Date }
-						data-bind:visit-date
-					/>
+				<div data-signals="{_preview: false}">
+					<div class="panel-1" data-show="!$_preview">
+						<h2>Complete the form</h2>
+						<form enctype="multipart/form-data" id="visit-form">
+							<input type="hidden" name="location-id" value={ vm.LocationId }/>
+							<input type="hidden" name="location-name" value={ vm.LocationName }/>
+							<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
+							<!-- Date -->
+							<div class="box">
+								<label for="visit-date">Visit date: </label>
+								<input
+									type="date"
+									id="visit-date"
+									name="visit-date"
+									value={ vm.Date }
+									data-bind:visit-date
+								/>
+							</div>
+							<!-- Duration -->
+							<div class="box">
+								<label for="visit-duration">Duration: </label>
+								<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ vm.Duration } data-bind:visit-duration/>
+							</div>
+							<!-- Notes -->
+							<div class="box">
+								<label for="visit-notes">Notes:</label>
+								<textarea name="visit-notes" id="visit-notes" placeholder="notes..." data-bind:visit-notes></textarea>
+							</div>
+							<div class="box">
+								<label for="original-photos">Upload images</label>
+								<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+								//<input class="original-photos" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+							</div>
+							<hr/>
+							<div id="thumbs">
+								<!-- thumbnails-->
+							</div>
+						</form>
+						<button data-on:click="$_preview = true">Stage 2</button>
+					</div>
+					<div class="panel-2" data-show="$_preview" class="hide">
+						<h2>Here is what you are going to upload</h2>
+						<div><b>Date:</b> <span data-text="$visitDate"></span></div>
+						<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
+						<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
+						{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form', selector: '#visit-form'})", vm.LocationId) }}
+						<button data-on:click="$_preview = !$_preview">Back</button>
+						<button
+							data-on:click={ action }
+							data-indicator:fetching
+							data-attr:disabled="$fetching"
+						>Submit</button>
+						<div data-show="$fetching">Loading...</div>
+						<div id="thumbs2"></div>
+					</div>
 				</div>
-				<!-- Duration -->
-				<div class="box">
-					<label for="visit-duration">Duration: </label>
-					<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ lv.Duration } data-bind:visit-duration/>
-				</div>
-				<!-- Notes -->
-				<div class="box">
-					<label for="visit-notes">Notes:</label>
-					<textarea name="visit-notes" id="visit-notes" placeholder="notes..." data-bind:visit-notes></textarea>
-				</div>
-				<div class="box">
-					<label for="original-photos">Upload images</label>
-					<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-					//<input class="original-photos" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-				</div>
-				<hr/>
-				<div id="thumbs">
-					<!-- thumbnails-->
-				</div>
-			</form>
-			<button data-on:click="$_preview = true">Stage 2</button>
+			</section>
 		</div>
-		<div class="panel-2" data-show="$_preview" class="hide">
-			<h2>Here is what you are going to upload</h2>
-			<div><b>Date:</b> <span data-text="$visitDate"></span></div>
-			<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
-			<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
-			{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form', selector: '#visit-form'})", lv.LocationId) }}
-			<button data-on:click="$_preview = !$_preview">Back</button>
-			<button
-				data-on:click={ action }
-				data-indicator:fetching
-				data-attr:disabled="$fetching"
-			>Submit</button>
-			<div data-show="$fetching">Loading...</div>
-			<div id="thumbs2"></div>
-		</div>
-	</div>
+	}
 }
 
 templ Thanks() {

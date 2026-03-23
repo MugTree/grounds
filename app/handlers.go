@@ -1,77 +1,135 @@
 package app
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
+	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func handleHomepageGet(db *sqlx.DB) http.HandlerFunc {
+type JourneyData struct {
+	CustomerId int
+	LocationId int
+}
+
+const JourneyDataCookieName string = "journeydata"
+
+func chooseCustomerGet(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		ok, customers, _ := getHomepageData(db, w, r)
 		if !ok {
 			return
 		}
-
-		vm := HomepageVm{Customers: customers}
-		HomePage(vm).Render(r.Context(), w)
+		vm := PickCustomerVm{Customers: customers}
+		ChooseCustomer(vm).Render(r.Context(), w)
 	}
 }
 
-func handleHomepagePost(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomerPost() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		ok, customers, locations := getHomepageData(db, w, r)
+		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
 		if !ok {
 			return
 		}
 
-		signals := homePageSignals{}
-		if err := datastar.ReadSignals(r, &signals); err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: error reading signals - %v", err))
+		journeyData := JourneyData{CustomerId: customerId}
+		b, _ := json.Marshal(journeyData)
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  JourneyDataCookieName,
+			Value: url.QueryEscape(string(b)),
+			Path:  "/",
+		})
+
+		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
+	}
+}
+
+// ----------------------------------------------------------------------------------
+
+func chooseLocationGet(db *sqlx.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ok, _, locations := getHomepageData(db, w, r)
+		if !ok {
 			return
 		}
 
-		sse := datastar.NewSSE(w, r)
-		vm := HomepageVm{Customers: customers}
-
-		if signals.CustomerId == 0 {
-			sse.PatchElementTempl(HomePage(vm))
-			return
-		}
-
-		if signals.LocationId == 0 {
-			vm.ShowLocations = true
-			vm.Locations = filteredLocations(locations, signals.CustomerId)
-			sse.PatchElementTempl(HomePage(vm))
-			return
-		}
-
-		location, err := getLocation(r.Context(), db, signals.LocationId, signals.CustomerId)
+		cookie, err := r.Cookie(JourneyDataCookieName)
 		if err != nil {
-			handleLocationError(w, r, err, signals)
+			renderServerError(w, r, fmt.Sprintf("http: ERROR HERE: %v", err))
+			return
+		}
+		decoded, _ := url.QueryUnescape(cookie.Value)
+
+		var data JourneyData
+		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
+			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
+		}
+
+		godump.Dump(data)
+
+		vm := PickLocationVm{Locations: filteredLocations(locations, data.CustomerId)}
+		ChooseLocation(vm).Render(r.Context(), w)
+	}
+}
+
+func chooseLocationPost() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		fmt.Println("BEING HIT!!!!")
+
+		locationId, ok := formValueAsIntOrErr(w, r, "location_id")
+		if !ok {
 			return
 		}
 
-		LogInfo(fmt.Sprintf("All looking good: %v", location))
-		sse.ExecuteScript(fmt.Sprintf(`window.location = "/visit/add/%v/"`, signals.LocationId))
+		cookie, _ := r.Cookie(JourneyDataCookieName)
+		decoded, _ := url.QueryUnescape(cookie.Value)
 
+		var data JourneyData
+		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
+			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
+		}
+		data.LocationId = locationId
+		b, _ := json.Marshal(data)
+
+		godump.Dump(data)
+
+		http.SetCookie(w, &http.Cookie{
+			Name:  "journey-data",
+			Value: url.QueryEscape(string(b)),
+			Path:  "/",
+		})
+
+		http.Redirect(w, r, "/visits/log-visit", http.StatusSeeOther)
 	}
 
 }
 
-func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
+func logLocationGet(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		locationId := r.PathValue("location_id")
+		cookie, _ := r.Cookie("journey-data")
+		decoded, _ := url.QueryUnescape(cookie.Value)
+
+		var data JourneyData
+		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
+			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
+		}
+
+		godump.Dump("journey data is", data)
 
 		loc := locationByCustomer{}
 
-		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
+		if err := db.Get(&loc, SelectLocationById, data.LocationId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
@@ -84,12 +142,14 @@ func handleVisitGet(db *sqlx.DB) http.HandlerFunc {
 			LocationId:   loc.LocationId,
 		}
 
-		LogInfo("starting stage 1")
-		VisitStage1(vm).Render(r.Context(), w)
+		//godump.Dump(vm)
+
+		LogInfo("starting log a location")
+		LogVisit(vm).Render(r.Context(), w)
 	}
 }
 
-func handleVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
+func logLocationPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ct := r.Header.Get("Content-Type")

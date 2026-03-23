@@ -33,10 +33,13 @@ type HomepageVm struct {
 
 type PickCustomerVm struct {
 	Customers []Customer
+	HasError  bool
 }
 
 type PickLocationVm struct {
-	Locations []Location
+	CustomerId int
+	Locations  []Location
+	HasError   bool
 }
 
 type homePageSignals struct {
@@ -63,24 +66,24 @@ func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (in
 
 }
 
-// func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
+func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
 
-// 	formVal := r.PathValue(key)
+	formVal := r.PathValue(key)
 
-// 	if formVal == "" {
-// 		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
-// 		return 0, false
-// 	}
+	if formVal == "" {
+		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
+		return 0, false
+	}
 
-// 	val, err := strconv.Atoi(formVal)
-// 	if err != nil {
-// 		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
-// 		return 0, false
-// 	}
+	val, err := strconv.Atoi(formVal)
+	if err != nil {
+		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		return 0, false
+	}
 
-// 	return val, true
+	return val, true
 
-// }
+}
 
 func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []Customer, []Location) {
 
@@ -163,25 +166,30 @@ func handleLocationError(
 	)
 }
 
-func logVisit(db *sqlx.DB, r *http.Request, uploadsDir string) error {
+func logVisit(db *sqlx.DB, w http.ResponseWriter, r *http.Request, uploadsDir string) (int, error) {
 
 	notes := r.FormValue("visit-notes")
-	locationId := r.FormValue("location-id")
+	locationId := r.FormValue("location_id")
+
+	locationInt, err := strconv.Atoi(locationId)
+	if err != nil {
+		return 0, fmt.Errorf("http: location value looks wrong - %v", locationInt)
+	}
 
 	tx, err := db.Beginx()
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer tx.Rollback()
 
 	res, err := tx.Exec(InsertVisitSql, locationId, 1, notes)
 	if err != nil {
-		return fmt.Errorf("sql: insert visit failed - %w", err)
+		return 0, fmt.Errorf("sql: insert visit failed - %w", err)
 	}
 
 	vid, err := res.LastInsertId()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if r.MultipartForm != nil {
@@ -190,37 +198,37 @@ func logVisit(db *sqlx.DB, r *http.Request, uploadsDir string) error {
 		for _, fh := range photos {
 			file, err := fh.Open()
 			if err != nil {
-				return fmt.Errorf("multipart: cannot open %s - %w", fh.Filename, err)
+				return 0, fmt.Errorf("multipart: cannot open %s - %w", fh.Filename, err)
 			}
 
 			mimetype, ext, err := validateUpload(file)
 			if err != nil {
 				file.Close()
-				return fmt.Errorf("validateUpload: %s - %w", fh.Filename, err)
+				return 0, fmt.Errorf("validateUpload: %s - %w", fh.Filename, err)
 			}
 
 			_, err = file.Seek(0, 0)
 			if err != nil {
 				file.Close()
-				return err
+				return 0, err
 			}
 
 			relPath, err := generatePath(ext)
 			if err != nil {
 				file.Close()
-				return err
+				return 0, err
 			}
 
 			err = saveThumbnail(file, relPath, uploadsDir)
 			if err != nil {
 				file.Close()
-				return err
+				return 0, err
 			}
 
 			err = saveToDisk(file, relPath, uploadsDir)
 			file.Close()
 			if err != nil {
-				return fmt.Errorf("saveToDisk: %w", err)
+				return 0, fmt.Errorf("saveToDisk: %w", err)
 			}
 
 			_, err = tx.ExecContext(
@@ -233,12 +241,16 @@ func logVisit(db *sqlx.DB, r *http.Request, uploadsDir string) error {
 				fh.Size,
 			)
 			if err != nil {
-				return err
+				return 0, err
 			}
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return 0, err
+	}
+
+	return locationInt, nil
 }
 
 func saveThumbnail(src io.Reader, relPath, uploadsDir string) error {

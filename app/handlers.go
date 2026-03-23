@@ -1,16 +1,12 @@
 package app
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
-	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
-	"github.com/starfederation/datastar-go/datastar"
 )
 
 type JourneyData struct {
@@ -32,7 +28,7 @@ func chooseCustomerGet(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseCustomerPost() http.HandlerFunc {
+func chooseCustomerPost(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -40,16 +36,18 @@ func chooseCustomerPost() http.HandlerFunc {
 			return
 		}
 
-		journeyData := JourneyData{CustomerId: customerId}
-		b, _ := json.Marshal(journeyData)
+		if customerId == 0 {
+			ok, customers, _ := getHomepageData(db, w, r)
+			if !ok {
+				return
+			}
+			vm := PickCustomerVm{Customers: customers, HasError: true}
+			ChooseCustomer(vm).Render(r.Context(), w)
+			return
+		}
 
-		http.SetCookie(w, &http.Cookie{
-			Name:  JourneyDataCookieName,
-			Value: url.QueryEscape(string(b)),
-			Path:  "/",
-		})
-
-		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
+		url := fmt.Sprintf("/visits/%v/choose-location", customerId)
+		http.Redirect(w, r, url, http.StatusSeeOther)
 	}
 }
 
@@ -57,79 +55,80 @@ func chooseCustomerPost() http.HandlerFunc {
 
 func chooseLocationGet(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
+		if !ok {
+			return
+		}
+
 		ok, _, locations := getHomepageData(db, w, r)
 		if !ok {
 			return
 		}
 
-		cookie, err := r.Cookie(JourneyDataCookieName)
-		if err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: ERROR HERE: %v", err))
+		if customerId == 0 {
+			renderServerError(w, r, "http: tempered request")
 			return
 		}
-		decoded, _ := url.QueryUnescape(cookie.Value)
 
-		var data JourneyData
-		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
-		}
-
-		godump.Dump(data)
-
-		vm := PickLocationVm{Locations: filteredLocations(locations, data.CustomerId)}
+		vm := PickLocationVm{Locations: filteredLocations(locations, customerId), CustomerId: customerId}
 		ChooseLocation(vm).Render(r.Context(), w)
 	}
 }
 
-func chooseLocationPost() http.HandlerFunc {
+func chooseLocationPost(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		fmt.Println("BEING HIT!!!!")
+		// hidden value
+		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
+		if !ok {
+			return
+		}
+
+		if customerId == 0 {
+			renderServerError(w, r, "http: customer id not being set is 0")
+			return
+		}
 
 		locationId, ok := formValueAsIntOrErr(w, r, "location_id")
 		if !ok {
 			return
 		}
 
-		cookie, _ := r.Cookie(JourneyDataCookieName)
-		decoded, _ := url.QueryUnescape(cookie.Value)
+		if locationId == 0 {
+			ok, _, locations := getHomepageData(db, w, r)
+			if !ok {
+				return
+			}
 
-		var data JourneyData
-		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
+			vm := PickLocationVm{Locations: filteredLocations(locations, customerId), HasError: true}
+			vm.CustomerId = customerId
+			ChooseLocation(vm).Render(r.Context(), w)
+			return
 		}
-		data.LocationId = locationId
-		b, _ := json.Marshal(data)
 
-		godump.Dump(data)
-
-		http.SetCookie(w, &http.Cookie{
-			Name:  "journey-data",
-			Value: url.QueryEscape(string(b)),
-			Path:  "/",
-		})
-
-		http.Redirect(w, r, "/visits/log-visit", http.StatusSeeOther)
+		url := fmt.Sprintf("/visits/%v/log-visit", locationId)
+		http.Redirect(w, r, url, http.StatusSeeOther)
 	}
 
 }
 
-func logLocationGet(db *sqlx.DB) http.HandlerFunc {
+func logVisitGet(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		cookie, _ := r.Cookie("journey-data")
-		decoded, _ := url.QueryUnescape(cookie.Value)
-
-		var data JourneyData
-		if err := json.Unmarshal([]byte(decoded), &data); err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: error unmarshalling journey data %v", decoded))
+		locationId, ok := pathValueAsIntOrErr(w, r, "location_id")
+		if !ok {
+			return
 		}
 
-		godump.Dump("journey data is", data)
+		if locationId == 0 {
+			renderServerError(w, r, "http: location_id is 0 this shouldn't happen")
+			return
+		}
 
 		loc := locationByCustomer{}
 
-		if err := db.Get(&loc, SelectLocationById, data.LocationId); err != nil {
+		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
 			renderServerError(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
@@ -142,14 +141,12 @@ func logLocationGet(db *sqlx.DB) http.HandlerFunc {
 			LocationId:   loc.LocationId,
 		}
 
-		//godump.Dump(vm)
-
 		LogInfo("starting log a location")
 		LogVisit(vm).Render(r.Context(), w)
 	}
 }
 
-func logLocationPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
+func logVisitPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ct := r.Header.Get("Content-Type")
@@ -165,15 +162,23 @@ func logLocationPost(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			}
 		}
 
-		sse := datastar.NewSSE(w, r)
-		if err := logVisit(db, r, uploadsDir); err != nil {
+		visitId, err := logVisit(db, w, r, uploadsDir)
+		if err != nil {
 			renderServerError(w, r, err.Error())
-			sse.PatchElementTempl(VisitError())
 			return
 		}
 
 		time.Sleep(3 * time.Second)
-		sse.PatchElementTempl(Thanks())
 		LogInfo("stage 2 finished and redirecting")
+
+		url := fmt.Sprintf("/visits/%v/visit-logged", visitId)
+		http.Redirect(w, r, url, http.StatusSeeOther)
+	}
+}
+
+func confirmVisit(_ *sqlx.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		w.Write([]byte("visit completed!"))
 	}
 }

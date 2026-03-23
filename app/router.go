@@ -41,12 +41,12 @@ func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 
 	r.Route("/visits", func(r chi.Router) {
 		r.Get("/choose-customer", chooseCustomerGet(db))
-		r.Post("/choose-customer", chooseCustomerPost())
-
-		r.Get("/choose-location", chooseLocationGet(db))
-		r.Post("/choose-location", chooseLocationPost())
-
-		r.Get("/log-visit", logLocationGet(db))
+		r.Post("/choose-customer", chooseCustomerPost(db))
+		r.Get("/{customer_id}/choose-location", chooseLocationGet(db))
+		r.Post("/{customer_id}/choose-location", chooseLocationPost(db))
+		r.Get("/{location_id}/log-visit", logVisitGet(db))
+		r.Post("/{location_id}/log-visit", logVisitPost(db, uploadsDir))
+		r.Get("/{location_id}/visit-logged", confirmVisit(db))
 	})
 
 	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {
@@ -55,13 +55,18 @@ func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	return r
 }
 
-func renderServerError(w http.ResponseWriter, r *http.Request, msg string) {
+func renderServerError(w http.ResponseWriter, r *http.Request, msg string, statusCode ...int) {
+	status := 500
+	if len(statusCode) > 0 {
+		status = statusCode[0]
+	}
+
 	_, file, line, ok := runtime.Caller(1) // 1 = caller of this function
 	if ok {
 		msg = fmt.Sprintf("%s (at %s:%d)", msg, file, line)
 	}
 	LogError(msg)
-	w.WriteHeader(500)
+	w.WriteHeader(status)
 	ErrorPage().Render(r.Context(), w)
 }
 

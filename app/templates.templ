@@ -23,14 +23,25 @@ templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
 		<section>
 			<h1>Choose a customer...</h1>
-			<form action="/visits/choose-customer" method="post">
-				<select id="customers-sel" name="customer_id">
+			<form action="choose-customer" method="post">
+				<select
+					id="customers-sel"
+					name="customer_id"
+					if vm.HasError == true {
+						name="invalid"
+						value="Invalid"
+						aria-invalid="true"
+					}
+				>
 					<option selected value="0">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
 				<button type="submit">Submit</button>
+				if vm.HasError {
+					<p>Please choose a customer</p>
+				}
 			</form>
 		</section>
 	}
@@ -40,14 +51,32 @@ templ ChooseLocation(vm PickLocationVm) {
 	@Layout() {
 		<section id="locations">
 			<h1>Choose a location...</h1>
-			<form action="/visits/choose-location" method="post">
-				<select id="location-sel" name="location_id">
-					<option selected value="0">Locations...</option>
-					for _, l := range vm.Locations {
-						<option value={ l.Id }>{  } { l.Name }</option>
+			<form action="choose-location" method="post">
+				if len(vm.Locations) != 0 {
+					if vm.CustomerId != 0 {
+						<input type="hidden" name="customer_id" value={ vm.CustomerId }/>
 					}
-				</select>
-				<button type="submit">Submit</button>
+					<select
+						id="location-sel"
+						name="location_id"
+						if vm.HasError == true {
+							name="invalid"
+							value="Invalid"
+							aria-invalid="true"
+						}
+					>
+						<option selected value="0">Locations...</option>
+						for _, l := range vm.Locations {
+							<option value={ l.Id }>{  } { l.Name }</option>
+						}
+					</select>
+					<button type="submit">Submit</button>
+					if vm.HasError {
+						<p>Please choose a customer</p>
+					}
+				} else {
+					<p>No locations configured: speak to admin</p>
+				}
 			</form>
 		</section>
 	}
@@ -55,73 +84,65 @@ templ ChooseLocation(vm PickLocationVm) {
 
 templ LogVisit(vm visitVM) {
 	@Layout() {
-		<p>Some app | <a href="#" onclick="history.back(); return false;">Back</a></p>
-		<hr/>
-		<h1>Visit to { vm.CustomerName } - { vm.LocationName } </h1>
-		<div id="visit">
-			<section id="stage1">
-				<style>
+		<style>
 		.box {padding: 12px}
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-				<div data-signals="{_preview: false}">
-					<div class="panel-1" data-show="!$_preview">
-						<h2>Complete the form</h2>
-						<form enctype="multipart/form-data" id="visit-form">
-							<input type="hidden" name="location-id" value={ vm.LocationId }/>
-							<input type="hidden" name="location-name" value={ vm.LocationName }/>
-							<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
-							<!-- Date -->
-							<div class="box">
-								<label for="visit-date">Visit date: </label>
-								<input
-									type="date"
-									id="visit-date"
-									name="visit-date"
-									value={ vm.Date }
-									data-bind:visit-date
-								/>
-							</div>
-							<!-- Duration -->
-							<div class="box">
-								<label for="visit-duration">Duration: </label>
-								<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ vm.Duration } data-bind:visit-duration/>
-							</div>
-							<!-- Notes -->
-							<div class="box">
-								<label for="visit-notes">Notes:</label>
-								<textarea name="visit-notes" id="visit-notes" placeholder="notes..." data-bind:visit-notes></textarea>
-							</div>
-							<div class="box">
-								<label for="original-photos">Upload images</label>
-								<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-								//<input class="original-photos" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-							</div>
-							<hr/>
-							<div id="thumbs">
-								<!-- thumbnails-->
-							</div>
-						</form>
-						<button data-on:click="$_preview = true">Stage 2</button>
+		<div data-signals="{_preview: false}">
+			<h2>Complete the form</h2>
+			<form enctype="multipart/form-data" id="visit-form" action="log-visit">
+				<div class="panel-1" data-show="!$_preview">
+					<input type="hidden" name="location-id" value={ vm.LocationId }/>
+					<input type="hidden" name="location-name" value={ vm.LocationName }/>
+					<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
+					<!-- Date -->
+					<div class="box">
+						<label for="visit-date">Visit date: </label>
+						<input
+							type="date"
+							id="visit-date"
+							name="visit-date"
+							value={ vm.Date }
+							data-bind:visit-date
+						/>
 					</div>
-					<div class="panel-2" data-show="$_preview" class="hide">
-						<h2>Here is what you are going to upload</h2>
-						<div><b>Date:</b> <span data-text="$visitDate"></span></div>
-						<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
-						<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
-						{{ action := fmt.Sprintf("@post('/visit/add/%v/', {contentType: 'form', selector: '#visit-form'})", vm.LocationId) }}
-						<button data-on:click="$_preview = !$_preview">Back</button>
-						<button
-							data-on:click={ action }
-							data-indicator:fetching
-							data-attr:disabled="$fetching"
-						>Submit</button>
-						<div data-show="$fetching">Loading...</div>
-						<div id="thumbs2"></div>
+					<!-- Duration -->
+					<div class="box">
+						<label for="visit-duration">Duration: </label>
+						<input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ vm.Duration } data-bind:visit-duration/>
 					</div>
+					<!-- Notes -->
+					<div class="box">
+						<label for="visit-notes">Notes:</label>
+						<textarea name="visit-notes" id="visit-notes" placeholder="notes..." data-bind:visit-notes></textarea>
+					</div>
+					<div class="box">
+						<label for="original-photos">Upload images</label>
+						<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+					</div>
+					<hr/>
+					<div id="thumbs">
+						<!-- thumbnails-->
+					</div>
+					<button type="button" data-on:click=" $_preview = true">Stage 2</button>
 				</div>
-			</section>
+				<div class="panel-2" data-show="$_preview" style="display: none;">
+					<h2>Here is what you are going to upload</h2>
+					<div><b>Date:</b> <span data-text="$visitDate"></span></div>
+					<div><b>Duration:</b> <span data-text="$visitDuration"></span></div>
+					<div><b>Notes:</b> <span data-text="$visitNotes"></span></div>
+					{{ action := fmt.Sprintf("@post('/visits/%v/log-visit', {contentType: 'form', selector: '#visit-form'})", vm.LocationId) }}
+					<button type="button" data-on:click="$_preview = false">Back</button>
+					<button
+						data-on:click={ action }
+						data-indicator:fetching
+						data-attr:disabled="$fetching"
+					>Submit</button>
+					<div data-show="$fetching">Loading...</div>
+					<div id="thumbs2"></div>
+				</div>
+			</form>
 		</div>
 	}
 }

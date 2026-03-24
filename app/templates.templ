@@ -33,8 +33,9 @@ templ ChooseCustomer(vm PickCustomerVm) {
 				<select
 					id="customers-sel"
 					name="customer_id"
+					required
 				>
-					<option selected disabled value="0">Customers...</option>
+					<option selected disabled value="">Customers...</option>
 					for _, c := range vm.Customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
@@ -57,8 +58,9 @@ templ ChooseLocation(vm PickLocationVm) {
 					<select
 						id="location-sel"
 						name="location_id"
+						required
 					>
-						<option selected disabled value="0">Locations...</option>
+						<option selected disabled value="">Locations...</option>
 						for _, l := range vm.Locations {
 							<option value={ l.Id }>{  } { l.Name }</option>
 						}

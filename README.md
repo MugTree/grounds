@@ -63,3 +63,11 @@ GET visit/pick-a-customer
 POST visit/pick-a-location
 POST visit/log-a-location
 visit/confirm-visit
+
+Research pico css
+
+https://picocss.com/docs/conditional
+duration slider needs a look
+
+images thumbs
+size and formatting

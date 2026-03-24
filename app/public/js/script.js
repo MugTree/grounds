@@ -47,7 +47,7 @@ async function resizePhotos(evt) {
   rebuildFiles(input);
   renderThumbs(input);
 
-  input.value = "";
+  //input.value = "";
 }
 
 function rebuildFiles(input) {
@@ -60,15 +60,15 @@ function rebuildFiles(input) {
 
 function renderThumbs(input) {
   const active = document.getElementById("thumbs");
-  const passive = document.getElementById("thumbs2");
 
   active.innerHTML = "";
-  passive.innerHTML = "";
 
   const activeFrag = document.createDocumentFragment();
-  const passiveFrag = document.createDocumentFragment();
 
   thumbs.forEach((t, index) => {
+    const div = document.createElement("div");
+    div.className = "thumb-holder";
+
     const img = document.createElement("img");
 
     img.src = t.url;
@@ -87,15 +87,10 @@ function renderThumbs(input) {
       renderThumbs(input);
     };
 
-    activeFrag.appendChild(img);
+    div.appendChild(img);
 
-    const clone = img.cloneNode(true);
-    clone.style.cursor = "default";
-    clone.title = "";
-
-    passiveFrag.appendChild(clone);
+    activeFrag.appendChild(div);
   });
 
   active.appendChild(activeFrag);
-  passive.appendChild(passiveFrag);
 }

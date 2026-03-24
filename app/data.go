@@ -37,9 +37,10 @@ type PickCustomerVm struct {
 }
 
 type PickLocationVm struct {
-	CustomerId int
-	Locations  []Location
-	HasError   bool
+	CustomerId   int
+	CustomerName string
+	Locations    []Location
+	HasError     bool
 }
 
 type homePageSignals struct {

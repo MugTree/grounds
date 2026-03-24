@@ -1,17 +1,26 @@
+:root {
+  --pico-font-size: 90%;
+}
+
+body > header,
 body > main,
 body > footer {
   max-width: 700px;
   margin-inline: auto;
 }
 
-#confirm {
-  display: none;
+datalist#priorities {
+  display: flex;
+  justify-content: space-between;
+  width: calc(100% + 4px - 1.25rem);
+  margin-top: -0.25rem;
+  margin-inline: auto;
 }
 
-#confirm:target {
-  display: block;
+#thumbs {
+  display: flex;
 }
 
-#confirm:target + #log {
-  display: none;
+.thumb-holder {
+  border: 1px solid;
 }

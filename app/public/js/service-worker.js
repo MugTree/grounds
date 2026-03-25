@@ -6,8 +6,8 @@ self.addEventListener("install", (event) => {
       .open(CACHE)
       .then((cache) =>
         cache.addAll([
-          "/public/js/pico.css",
-          "/public/js/main.css",
+          "/public/css/pico.css",
+          "/public/css/main.css",
           "/public/js/script.js",
           "/public/js/datastar.js",
         ]),

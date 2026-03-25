@@ -16,6 +16,26 @@ templ Layout() {
 
 </script>
 		<body>
+			// 			<button id="installBtn" hidden>Install App</button>
+			// 			<script>
+			// let deferredPrompt;
+			// const installBtn = document.getElementById('installBtn');
+			// window.addEventListener('beforeinstallprompt', (e) => {
+			//   e.preventDefault();
+			//   deferredPrompt = e;
+			//   installBtn.hidden = false;
+			// });
+			// installBtn.addEventListener('click', async () => {
+			//   if (!deferredPrompt) return;
+			//   deferredPrompt.prompt();
+			//   const choice = await deferredPrompt.userChoice;
+			//   if (choice.outcome === 'accepted') {
+			//     console.log('User installed app');
+			//   }
+			//   deferredPrompt = null;
+			//   installBtn.hidden = true;
+			// });
+			// </script>
 			<header>
 				<h4><span style="font-size: larger;">🧭</span> <a href="/">Visit tracker</a></h4>
 				<hr/>
@@ -37,21 +57,27 @@ if ('serviceWorker' in navigator) {
 templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
 		<section id="choose-customer">
-			<h1>Step 1: Choose a customer...</h1>
-			<p>Pick a customer to visit</p>
-			<form action="choose-customer" method="post">
-				<select
-					id="customers-sel"
-					name="customer_id"
-					required
-				>
-					<option selected disabled value="">Customers...</option>
-					for _, c := range vm.Customers {
-						<option value={ c.Id }>{ c.Name }</option>
-					}
-				</select>
-				<button type="submit">Submit</button>
-			</form>
+			<section>
+				<hgroup>
+					<h2>Step 1: pick a customer</h2>
+					<p>Choose a customer to visit</p>
+				</hgroup>
+			</section>
+			<section>
+				<form action="choose-customer" method="post">
+					<select
+						id="customers-sel"
+						name="customer_id"
+						required
+					>
+						<option selected disabled value="">Customers...</option>
+						for _, c := range vm.Customers {
+							<option value={ c.Id }>{ c.Name }</option>
+						}
+					</select>
+					<button type="submit">Submit</button>
+				</form>
+			</section>
 		</section>
 		// <section>
 		// 	<h2>Previous visits</h2>
@@ -62,8 +88,10 @@ templ ChooseCustomer(vm PickCustomerVm) {
 templ ChooseLocation(vm PickLocationVm) {
 	@Layout() {
 		<section id="choose-location">
-			<h1>Step 2: Choose a location...</h1>
-			<p>Pick one of { vm.Locations[0].Name }s locations</p>
+			<hgroup>
+				<h2>Step 2: choose a location</h2>
+				<p>Where do  you plan to visit</p>
+			</hgroup>
 			<form action="choose-location" method="post">
 				if len(vm.Locations) != 0 {
 					if vm.CustomerId != 0 {
@@ -95,66 +123,72 @@ templ LogVisit(vm visitVM) {
 		.hide {display: none;}
 	</style>
 		<div id="log-visit">
-			<h1>Step 3: Fill in the visit data</h1>
-			<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
-			<form enctype="multipart/form-data" method="post" id="visit-form">
-				<section>
-					<input type="hidden" name="location-id" value={ vm.LocationId }/>
-					<input type="hidden" name="location-name" value={ vm.LocationName }/>
-					<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
-					<div class="grid">
-						<label for="visit-date">
-							<b>Visit date</b>
-							<input
-								type="date"
-								id="visit-date"
-								name="visit-date"
-								required
-							/>
+			<section>
+				<hgroup>
+					<h2>Step 3: record the visit</h2>
+					<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
+				</hgroup>
+			</section>
+			<section>
+				<form enctype="multipart/form-data" method="post" id="visit-form">
+					<section>
+						<input type="hidden" name="location-id" value={ vm.LocationId }/>
+						<input type="hidden" name="location-name" value={ vm.LocationName }/>
+						<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
+						<div class="grid">
+							<label for="visit-date">
+								<b>Visit date</b>
+								<input
+									type="date"
+									id="visit-date"
+									name="visit-date"
+									required
+								/>
+							</label>
+							<label for="visit-time">
+								<b>Visit start time</b>
+								<input
+									type="time"
+									id="visit-time"
+									name="visit-time"
+									required
+								/>
+							</label>
+						</div>
+						<div>
+							<label for="visit-notes">
+								<b>Vist notes</b>
+								<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
+							</label>
+						</div>
+						<div class="grid">
+							<label for="visit-duration">
+								<b>Approx visit duration </b>
+								<input id="visit-duration" name="visit-duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
+								<datalist id="durations">
+									<option value="15">15 min</option>
+									<option value="30">30 min</option>
+									<option value="45">45 min</option>
+									<option value="60">1 hour</option>
+								</datalist>
+							</label>
+							<label for="original-photos">
+								<b>Visit images</b>
+								<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+							</label>
+						</div>
+						<section id="thumbs"></section>
+						<label for="confirm">
+							<b>All the data looks ok?</b>
+							<input type="checkbox" name="confirm" id="confirm" required/>
 						</label>
-						<label for="visit-time">
-							<b>Visit start time</b>
-							<input
-								type="time"
-								id="visit-time"
-								name="visit-time"
-								required
-							/>
-						</label>
-					</div>
-					<div>
-						<label for="visit-notes">
-							<b>Vist notes</b>
-							<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
-						</label>
-					</div>
-					<div class="grid">
-						<label for="visit-duration">
-							<b>Approx visit duration </b>
-							<input id="visit-duration" name="visit-duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
-							<datalist id="durations">
-								<option value="15">15 min</option>
-								<option value="30">30 min</option>
-								<option value="45">45 min</option>
-								<option value="60">1 hour</option>
-							</datalist>
-						</label>
-						<label for="original-photos">
-							<b>Visit images</b>
-							<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
-						</label>
-					</div>
-					<section id="thumbs"></section>
-					<label for="confirm">
-						<b>All the data looks ok?</b>
-						<input type="checkbox" name="confirm" id="confirm" required/>
-					</label>
-				</section>
-				<section>
-					<button data-indicator:fetching data-on:click="@post('/visits/log-visit', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
-					<div data-show="$fetching">Loading...</div>
-				</section>
-			</form>
+					</section>
+					<section>
+						<button style="width: 100%;" data-indicator:fetching data-on:click="@post('/visits/log-visit', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
+						<div data-show="$fetching">Loading...</div>
+					</section>
+				</form>
+			</section>
 		</div>
 	}
 }

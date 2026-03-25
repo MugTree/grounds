@@ -14,11 +14,9 @@ import (
 
 //go:embed public/css/*.css
 //go:embed public/js/*.js
+//go:embed public/js/manifest.json
+//go:embed public/img/*.png
 var staticFS embed.FS
-
-// var (
-// 	StaticSys = hashfs.NewFS(staticFS)
-// )
 
 // admin features
 /*

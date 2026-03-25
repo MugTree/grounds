@@ -5,9 +5,12 @@
 body > header,
 body > main,
 body > footer {
-  padding: 0 12px;
   max-width: 700px;
   margin-inline: auto;
+}
+
+body > header {
+  padding: 24px 12px 0 12px;
 }
 
 datalist#durations {

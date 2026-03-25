@@ -29,7 +29,7 @@ func Layout() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Document</title><script type=\"module\" src=\"/public/js/datastar.js\"></script><link rel=\"manifest\" href=\"/public/js/manifest.json\"><link href=\"/public/css/pico.css\" rel=\"stylesheet\"><link href=\"/public/css/main.css\" rel=\"stylesheet\"></head><script>\n\n</script><body><header><h4><span style=\"font-size: larger;\">🧭</span> <a href=\"/\">Visit tracker</a></h4><hr></header><main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Document</title><script type=\"module\" src=\"/public/js/datastar.js\"></script><link rel=\"manifest\" href=\"/public/js/manifest.json\"><link href=\"/public/css/pico.css\" rel=\"stylesheet\"><link href=\"/public/css/main.css\" rel=\"stylesheet\"></head><script>\n\n</script><body><header><h4><a href=\"/\">Visit tracker demo</a></h4></header><main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -78,7 +78,7 @@ func ChooseCustomer(vm PickCustomerVm) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<section id=\"choose-customer\"><section><hgroup><h2>Step 1: pick a customer</h2><p>Choose a customer to visit</p></hgroup></section><section><form action=\"choose-customer\" method=\"post\"><select id=\"customers-sel\" name=\"customer_id\" required><option selected disabled value=\"\">Customers...</option> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<article id=\"choose-customer\"><section><hgroup><h2>Step 1: pick a customer</h2><p>Choose a customer to visit</p></hgroup></section><section><form action=\"choose-customer\" method=\"post\"><select id=\"customers-sel\" name=\"customer_id\" required><option selected disabled value=\"\">Customers...</option> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -90,7 +90,7 @@ func ChooseCustomer(vm PickCustomerVm) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(c.Id)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 75, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 74, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -103,7 +103,7 @@ func ChooseCustomer(vm PickCustomerVm) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(c.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 75, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 74, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -114,7 +114,7 @@ func ChooseCustomer(vm PickCustomerVm) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</select> <button type=\"submit\">Submit</button></form></section></section>  ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</select> <button type=\"submit\">Submit</button></form></section></article>  ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -161,7 +161,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<section id=\"choose-location\"><hgroup><h2>Step 2: choose a location</h2><p>Where do  you plan to visit</p></hgroup><form action=\"choose-location\" method=\"post\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<article id=\"choose-location\"><hgroup><h2>Step 2: choose a location</h2><p>Where do  you plan to visit</p></hgroup><form action=\"choose-location\" method=\"post\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -174,7 +174,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerId)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 98, Col: 67}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 97, Col: 67}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -197,7 +197,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(l.Id)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 107, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 106, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -210,7 +210,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(l.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 107, Col: 43}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 106, Col: 43}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -231,7 +231,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</form></section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</form></article>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -278,14 +278,14 @@ func LogVisit(vm visitVM) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<style>\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <div id=\"log-visit\"><section><hgroup><h2>Step 3: record the visit</h2><p>Please add any information for ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<style>\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <article id=\"log-visit\"><section><hgroup><h2>Step 3: record the visit</h2><p>Please add any information for ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 129, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -298,7 +298,7 @@ func LogVisit(vm visitVM) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 129, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -311,7 +311,7 @@ func LogVisit(vm visitVM) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationId)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 135, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 134, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -324,7 +324,7 @@ func LogVisit(vm visitVM) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 136, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 135, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -337,13 +337,13 @@ func LogVisit(vm visitVM) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 137, Col: 71}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 136, Col: 71}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"grid\"><label for=\"visit-date\"><b>Visit date</b> <input type=\"date\" id=\"visit-date\" name=\"visit-date\" required></label> <label for=\"visit-time\"><b>Visit start time</b> <input type=\"time\" id=\"visit-time\" name=\"visit-time\" required></label></div><div><label for=\"visit-notes\"><b>Vist notes</b> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"Some notes about the visit...\"></textarea></label></div><div class=\"grid\"><label for=\"visit-duration\"><b>Approx visit duration </b> <input id=\"visit-duration\" name=\"visit-duration\" list=\"durations\" type=\"range\" min=\"1\" max=\"4\" step=\"1\" value=\"2\" style=\"--pico-selected-ratio: 0%;\"> <datalist id=\"durations\"><option value=\"15\">15 min</option> <option value=\"30\">30 min</option> <option value=\"45\">45 min</option> <option value=\"60\">1 hour</option></datalist></label> <label for=\"original-photos\"><b>Visit images</b> <input class=\"original-photos\" data-on:change=\"resizePhotos(evt)\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></label></div><section id=\"thumbs\"></section><label for=\"confirm\"><b>All the data looks ok?</b> <input type=\"checkbox\" name=\"confirm\" id=\"confirm\" required></label></section><section><button style=\"width: 100%;\" data-indicator:fetching data-on:click=\"@post('/visits/log-visit', {contentType: 'form'})\" data-attr:disabled=\"$fetching\">Submit</button><div data-show=\"$fetching\">Loading...</div></section></form></section></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"grid\"><label for=\"visit-date\"><b>Visit date</b> <input type=\"date\" id=\"visit-date\" name=\"visit-date\" required></label> <label for=\"visit-time\"><b>Visit start time</b> <input type=\"time\" id=\"visit-time\" name=\"visit-time\" required></label></div><div><label for=\"visit-notes\"><b>Vist notes</b> <textarea name=\"visit-notes\" id=\"visit-notes\" placeholder=\"Some notes about the visit...\"></textarea></label></div><div class=\"grid\"><label for=\"visit-duration\"><b>Approx visit duration </b> <input id=\"visit-duration\" name=\"visit-duration\" list=\"durations\" type=\"range\" min=\"1\" max=\"4\" step=\"1\" value=\"2\" style=\"--pico-selected-ratio: 0%;\"> <datalist id=\"durations\"><option value=\"15\">15 min</option> <option value=\"30\">30 min</option> <option value=\"45\">45 min</option> <option value=\"60\">1 hour</option></datalist></label> <label for=\"original-photos\"><b>Visit images</b> <input class=\"original-photos\" data-on:change=\"resizePhotos(evt)\" id=\"original-photos\" name=\"original-photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></label></div><section id=\"thumbs\"></section><label for=\"confirm\"><b>All the data looks ok?</b> <input type=\"checkbox\" name=\"confirm\" id=\"confirm\" required></label></section><section><button style=\"width: 100%;\" data-indicator:fetching data-on:click=\"@post('/visits/log-visit', {contentType: 'form'})\" data-attr:disabled=\"$fetching\">Submit</button><div data-show=\"$fetching\">Loading...</div></section></form></section></article>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -390,7 +390,7 @@ func Thanks() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div id=\"log-visit\"><script>\n\t\t\t\tfunction redirect() {\n\t\t\t\t\twindow.location = \"/visits/choose-customer\";\n\t\t\t\t}\n\t\t\t\tsetTimeout(redirect, 2000);\n\t\t\t</script><h1>Thanks</h1><p>We've added your visit to the database</p><p>You'll now be redirected back to the homepage</p><p><a href=\"/\">&lt; Home</a></p></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<article id=\"log-visit\"><script>\n\t\t\t\tfunction redirect() {\n\t\t\t\t\twindow.location = \"/visits/choose-customer\";\n\t\t\t\t}\n\t\t\t\tsetTimeout(redirect, 2000);\n\t\t\t</script><h1>Thanks</h1><p>We've added your visit to the database</p><p>You'll now be redirected back to the homepage</p><p><a href=\"/\">&lt; Home</a></p></article>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

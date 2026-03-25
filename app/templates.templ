@@ -37,8 +37,7 @@ templ Layout() {
 			// });
 			// </script>
 			<header>
-				<h4><span style="font-size: larger;">🧭</span> <a href="/">Visit tracker</a></h4>
-				<hr/>
+				<h4><a href="/">Visit tracker demo</a></h4>
 			</header>
 			<main>
 				{ children... }
@@ -56,7 +55,7 @@ if ('serviceWorker' in navigator) {
 
 templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
-		<section id="choose-customer">
+		<article id="choose-customer">
 			<section>
 				<hgroup>
 					<h2>Step 1: pick a customer</h2>
@@ -78,7 +77,7 @@ templ ChooseCustomer(vm PickCustomerVm) {
 					<button type="submit">Submit</button>
 				</form>
 			</section>
-		</section>
+		</article>
 		// <section>
 		// 	<h2>Previous visits</h2>
 		// </section>
@@ -87,7 +86,7 @@ templ ChooseCustomer(vm PickCustomerVm) {
 
 templ ChooseLocation(vm PickLocationVm) {
 	@Layout() {
-		<section id="choose-location">
+		<article id="choose-location">
 			<hgroup>
 				<h2>Step 2: choose a location</h2>
 				<p>Where do  you plan to visit</p>
@@ -112,7 +111,7 @@ templ ChooseLocation(vm PickLocationVm) {
 					<p>No locations configured: speak to admin</p>
 				}
 			</form>
-		</section>
+		</article>
 	}
 }
 
@@ -122,7 +121,7 @@ templ LogVisit(vm visitVM) {
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-		<div id="log-visit">
+		<article id="log-visit">
 			<section>
 				<hgroup>
 					<h2>Step 3: record the visit</h2>
@@ -189,13 +188,13 @@ templ LogVisit(vm visitVM) {
 					</section>
 				</form>
 			</section>
-		</div>
+		</article>
 	}
 }
 
 templ Thanks() {
 	@Layout() {
-		<div id="log-visit">
+		<article id="log-visit">
 			<script>
 				function redirect() {
 					window.location = "/visits/choose-customer";
@@ -206,7 +205,7 @@ templ Thanks() {
 			<p>We've added your visit to the database</p>
 			<p>You'll now be redirected back to the homepage</p>
 			<p><a href="/">&lt; Home</a></p>
-		</div>
+		</article>
 	}
 }
 

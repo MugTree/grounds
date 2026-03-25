@@ -6,6 +6,14 @@
 source ./load_env.sh
 ```
 
+## to start dev env
+
+Runs a proxy on 8081
+
+```bash
+make start-dev
+```
+
 ## to run seeds
 
 ```bash

@@ -1,5 +1,9 @@
-:root {
+/* :root {
   --pico-font-size: 90%;
+} */
+
+body {
+  padding: 24px;
 }
 
 body > header,
@@ -7,10 +11,17 @@ body > main,
 body > footer {
   max-width: 700px;
   margin-inline: auto;
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding: var(--pico-block-spacing-vertical)
+    var(--pico-block-spacing-horizontal);
 }
 
-body > header {
-  padding: 24px 12px 0 12px;
+section,
+main,
+header {
+  margin-bottom: calc(var(--pico-spacing) * 2);
 }
 
 datalist#durations {

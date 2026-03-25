@@ -5,8 +5,8 @@ tmp_dir = "tmp"
   bin = "./tmp/app"
   cmd = "templ generate && go build -o ./tmp/app ."
   delay = 1000
-  exclude_dir = ["uploads", "tmp", "log", "scripts", "data"]
-  exclude_file = ["pico.css"]
+  exclude_dir = ["uploads", "tmp", "log", "scripts", "data", "bin"]
+  exclude_file = ["./app/public/css/pico.css"]
   exclude_regex = [".*_templ.go"]
   exclude_unchanged = false
   follow_symlink = false
@@ -14,13 +14,13 @@ tmp_dir = "tmp"
   include_dir = []
   include_ext = ["go", "tpl", "tmpl", "templ", "html", "js", "css"]
   kill_delay = "0s"
-  log = "build-errors.log"
+  log = "./log/build-errors.log"
   send_interrupt = false
   stop_on_error = true
 
 [color]
   app = ""
-  build = "yellow"
+  build = "red"
   main = "magenta"
   runner = "green"
   watcher = "cyan"

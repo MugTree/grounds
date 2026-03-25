@@ -410,15 +410,17 @@ const (
 
 	// ----------------------------------------
 
-	SelectLocationsByCustomerIdSql = `
-		SELECT 
-			l.name AS location_name,
-			c.name AS customer_name,
-			l.id AS location_id
-		FROM location l
-		INNER JOIN customer c
-		ON l.customer_id = c.id
-		WHERE c.id = $1;`
+	SelectCustomerByIdSql = `SELECT * FROM customer WHERE id = $1`
+
+	// SelectLocationsByCustomerIdSql = `
+	// 	SELECT
+	// 		l.name AS location_name,
+	// 		c.name AS customer_name,
+	// 		l.id AS location_id
+	// 	FROM location l
+	// 	INNER JOIN customer c
+	// 	ON l.customer_id = c.id
+	// 	WHERE c.id = $1;`
 
 	// --------------------------------------
 
@@ -426,6 +428,7 @@ const (
  		SELECT
 			l.name AS location_name,
 			c.name AS customer_name,
+			c.Id AS customer_id,
 			l.id AS location_id
 		FROM location l
 		INNER JOIN customer c
@@ -460,6 +463,7 @@ type Visit struct {
 type locationByCustomer struct {
 	LocationName string `db:"location_name"`
 	CustomerName string `db:"customer_name"`
+	CustomerId   string `db:"customer_id"`
 	LocationId   string `db:"location_id"`
 }
 
@@ -471,6 +475,7 @@ type visitVM struct {
 	Date         string
 	Duration     string
 	Notes        string
+	CustomerId   string
 	CustomerName string
 	LocationName string
 	LocationId   string

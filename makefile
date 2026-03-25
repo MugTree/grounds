@@ -7,7 +7,7 @@ run-tests:
 format-html:
 	templ fmt ./app 
 
-start-dev:
+dev:
 	air  
 
 production-build-app:

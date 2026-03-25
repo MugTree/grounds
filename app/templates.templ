@@ -17,13 +17,10 @@ templ Layout() {
 
 </script>
 		<body>
-			<header>
-				<h4><a href="/">Visit tracker demo</a></h4>
-			</header>
+			<header><a href="/" class="secondary">Visit tracker demo</a></header>
 			<main>
 				{ children... }
 			</main>
-			<footer></footer>
 			<script>
 				if ('serviceWorker' in navigator) {
   					navigator.serviceWorker.register('/public/js/service-worker.js')
@@ -37,29 +34,23 @@ templ Layout() {
 
 templ ChooseCustomer(vm PickCustomerVm) {
 	@Layout() {
-		<article id="choose-customer">
-			<section>
-				<hgroup>
-					<h2>Step 1: pick a customer</h2>
-					<p>Choose a customer to visit</p>
-				</hgroup>
-			</section>
-			<section>
-				<form action="choose-customer" method="post">
-					<select
-						id="customers-sel"
-						name="customer_id"
-						required
-					>
-						<option selected disabled value="">Customers...</option>
-						for _, c := range vm.Customers {
-							<option value={ c.Id }>{ c.Name }</option>
-						}
-					</select>
-					<button type="submit">Submit</button>
-				</form>
-			</section>
-		</article>
+		<section>
+			<h1>Pick a customer</h1>
+			<p>Choose a customer to visit</p>
+			<form action="choose-customer" method="post">
+				<select
+					id="customers-sel"
+					name="customer_id"
+					required
+				>
+					<option selected disabled value="">Customers...</option>
+					for _, c := range vm.Customers {
+						<option value={ c.Id }>{ c.Name }</option>
+					}
+				</select>
+				<button type="submit">Submit</button>
+			</form>
+		</section>
 		// <section>
 		// 	<h2>Previous visits</h2>
 		// </section>
@@ -68,11 +59,10 @@ templ ChooseCustomer(vm PickCustomerVm) {
 
 templ ChooseLocation(vm PickLocationVm) {
 	@Layout() {
-		<article id="choose-location">
-			<hgroup>
-				<h2>Step 2: choose a location</h2>
-				<p>Which of [CUSTOMER NAME] locations are you visiting?</p>
-			</hgroup>
+		<section>
+			@BackButton()
+			<h1>Choose a location</h1>
+			<p>Which of { vm.CustomerName } locations are you visiting?</p>
 			<form action="choose-location" method="post">
 				if len(vm.Locations) != 0 {
 					if vm.CustomerId != 0 {
@@ -93,24 +83,21 @@ templ ChooseLocation(vm PickLocationVm) {
 					<p>No locations configured: speak to admin</p>
 				}
 			</form>
-		</article>
+		</section>
 	}
+}
+
+templ BackButton() {
+	<span style="float: right;"><a href="#" onclick="history.back(); return false;">&lt; Back</a></span>
 }
 
 templ LogVisit(vm visitVM) {
 	@Layout() {
-		<style>
-		.show {display: block;}
-		.hide {display: none;}
-	</style>
-		<article id="log-visit">
+		<div id="log-visit">
 			<section>
-				<hgroup>
-					<h2>Step 3: record the visit</h2>
-					<p>Please add any information for <b>{ vm.CustomerName }</b> from the <b>{ vm.LocationName }</b> site</p>
-				</hgroup>
-			</section>
-			<section>
+				@BackButton()
+				<h1>Record the visit</h1>
+				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
 				<form enctype="multipart/form-data" method="post" id="visit-form">
 					<section>
 						<input type="hidden" name="location-id" value={ vm.LocationId }/>
@@ -118,7 +105,7 @@ templ LogVisit(vm visitVM) {
 						<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
 						<div class="grid">
 							<label for="visit-date">
-								<b>Visit date</b>
+								Visit date
 								<input
 									type="date"
 									id="visit-date"
@@ -127,7 +114,7 @@ templ LogVisit(vm visitVM) {
 								/>
 							</label>
 							<label for="visit-time">
-								<b>Visit start time</b>
+								Visit start time
 								<input
 									type="time"
 									id="visit-time"
@@ -138,13 +125,13 @@ templ LogVisit(vm visitVM) {
 						</div>
 						<div>
 							<label for="visit-notes">
-								<b>Vist notes</b>
+								Vist notes
 								<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
 							</label>
 						</div>
 						<div class="grid">
 							<label for="visit-duration">
-								<b>Approx visit duration </b>
+								Approx visit duration
 								<input id="visit-duration" name="visit-duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
 								<datalist id="durations">
 									<option value="15">15 min</option>
@@ -154,40 +141,42 @@ templ LogVisit(vm visitVM) {
 								</datalist>
 							</label>
 							<label for="original-photos">
-								<b>Visit images</b>
+								Visit images
 								<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
 							</label>
 						</div>
 						<section id="thumbs"></section>
-						<label for="confirm">
-							<b>All the data looks ok?</b>
-							<input type="checkbox" name="confirm" id="confirm" required/>
-						</label>
-					</section>
-					<section>
+						<section>
+							<label for="confirm">
+								All the data looks ok?
+								<input type="checkbox" name="confirm" id="confirm" required/>
+							</label>
+						</section>
 						<button style="width: 100%;" data-indicator:fetching data-on:click="@post('/visits/log-visit', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
 						<div data-show="$fetching">Loading...</div>
 					</section>
 				</form>
 			</section>
-		</article>
+		</div>
 	}
 }
 
 templ Thanks() {
 	@Layout() {
-		<article id="log-visit">
+		<div id="log-visit">
 			<script>
 				function redirect() {
 					window.location = "/visits/choose-customer";
 				}
 				setTimeout(redirect, 2000);
 			</script>
-			<h1>Thanks</h1>
-			<p>We've added your visit to the database</p>
-			<p>You'll now be redirected back to the homepage</p>
-			<p><a href="/">&lt; Home</a></p>
-		</article>
+			<section>
+				<h1>Thanks</h1>
+				<p>We've added your visit to the database</p>
+				<p>You'll now be redirected back to the homepage</p>
+				<p><a href="/">&lt; Home</a></p>
+			</section>
+		</div>
 	}
 }
 

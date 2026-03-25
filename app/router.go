@@ -20,7 +20,6 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-// admin features
 /*
 	add customer
 	add location

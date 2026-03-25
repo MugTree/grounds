@@ -57,8 +57,6 @@ func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
 func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		fmt.Println("asdfadfsss")
-
 		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
 		if !ok {
 			return
@@ -74,7 +72,19 @@ func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		vm := PickLocationVm{Locations: filteredLocations(locations, customerId), CustomerId: customerId}
+		var customer Customer
+
+		if err := db.GetContext(r.Context(), &customer, SelectCustomerByIdSql, customerId); err != nil {
+			renderServerError(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
+			return
+		}
+
+		vm := PickLocationVm{
+			CustomerName: customer.Name,
+			Locations:    filteredLocations(locations, customerId),
+			CustomerId:   customerId,
+		}
+
 		ChooseLocation(vm).Render(r.Context(), w)
 	}
 }
@@ -141,6 +151,7 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 			Duration:     "60",
 			CustomerName: loc.CustomerName,
 			LocationName: loc.LocationName,
+			CustomerId:   loc.CustomerId,
 			LocationId:   loc.LocationId,
 		}
 

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 type JourneyData struct {
@@ -146,6 +147,7 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
+// will use datastar to make the form submission then i can return some HMTL into the page
 func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
@@ -162,22 +164,19 @@ func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			}
 		}
 
-		visitId, err := logVisitData(db, r, uploadsDir)
+		_, err := logVisitData(db, r, uploadsDir)
 		if err != nil {
 			renderServerError(w, r, err.Error())
 			return
 		}
 
-		time.Sleep(3 * time.Second)
+		time.Sleep(1 * time.Second)
 		LogInfo("stage 2 finished and redirecting")
 
-		url := fmt.Sprintf("/visits/%v/complete", visitId)
-		http.Redirect(w, r, url, http.StatusSeeOther)
-	}
-}
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(Thanks())
 
-func complete(_ *sqlx.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		Thanks().Render(r.Context(), w)
+		// time.Sleep(2 * time.Second)
+		// sse.ExecuteScript(`window.location = "/"`)
 	}
 }

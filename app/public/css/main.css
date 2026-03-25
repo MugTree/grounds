@@ -9,7 +9,7 @@ body > footer {
   margin-inline: auto;
 }
 
-datalist#priorities {
+datalist#durations {
   display: flex;
   justify-content: space-between;
   width: calc(100% + 4px - 1.25rem);

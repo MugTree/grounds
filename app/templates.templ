@@ -1,7 +1,5 @@
 package app
 
-import "fmt"
-
 templ Layout() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -10,6 +8,7 @@ templ Layout() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Document</title>
 			<script type="module" src="/public/js/datastar.js"></script>
+			<link rel="manifest" href="/public/js/manifest.json"/>
 			<link
 				rel="stylesheet"
 				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
@@ -20,6 +19,9 @@ templ Layout() {
 			/>
 			<link href="/public/css/main.css" rel="stylesheet"/>
 		</head>
+		<script>
+
+</script>
 		<body>
 			<header>
 				<h4><span style="font-size: larger;">🧭</span> <a href="/">Visit tracker</a></h4>
@@ -29,6 +31,11 @@ templ Layout() {
 				{ children... }
 			</main>
 			<footer></footer>
+			<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/public/js/service-worker.js');
+}
+</script>
 			<script src="/public/js/script.js"></script>
 		</body>
 	</html>
@@ -53,9 +60,9 @@ templ ChooseCustomer(vm PickCustomerVm) {
 				<button type="submit">Submit</button>
 			</form>
 		</section>
-		<section>
-			<h2>Previous visits</h2>
-		</section>
+		// <section>
+		// 	<h2>Previous visits</h2>
+		// </section>
 	}
 }
 
@@ -94,11 +101,10 @@ templ LogVisit(vm visitVM) {
 		.show {display: block;}
 		.hide {display: none;}
 	</style>
-		<div data-signals="{_preview: false}" id="log-visit">
+		<div id="log-visit">
 			<h1>Step 3: Fill in the visit data</h1>
 			<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
-			{{ action := fmt.Sprintf("log-visit") }}
-			<form enctype="multipart/form-data" method="post" id="visit-form" action={ action }>
+			<form enctype="multipart/form-data" method="post" id="visit-form">
 				<section>
 					<input type="hidden" name="location-id" value={ vm.LocationId }/>
 					<input type="hidden" name="location-name" value={ vm.LocationName }/>
@@ -110,27 +116,35 @@ templ LogVisit(vm visitVM) {
 								type="date"
 								id="visit-date"
 								name="visit-date"
-								value={ vm.Date }
-								data-bind:visit-date
 								required
 							/>
 						</label>
+						<label for="visit-time">
+							<b>Visit start time</b>
+							<input
+								type="time"
+								id="visit-time"
+								name="visit-time"
+								required
+							/>
+						</label>
+					</div>
+					<div>
 						<label for="visit-notes">
 							<b>Vist notes</b>
-							<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..." data-bind:visit-notes></textarea>
+							<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
 						</label>
 					</div>
 					<div class="grid">
 						<label for="visit-duration">
 							<b>Approx visit duration </b>
-							<input id="priority" name="priority" list="priorities" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
-							<datalist id="priorities">
+							<input id="visit-duration" name="visit-duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
+							<datalist id="durations">
 								<option value="15">15 min</option>
 								<option value="30">30 min</option>
 								<option value="45">45 min</option>
 								<option value="60">1 hour</option>
 							</datalist>
-							// <input type="range" id="visit-duration" name="visit-duration" min="15" max="300" value={ vm.Duration } data-bind:visit-duration/>
 						</label>
 						<label for="original-photos">
 							<b>Visit images</b>
@@ -144,7 +158,8 @@ templ LogVisit(vm visitVM) {
 					</label>
 				</section>
 				<section>
-					<button type="submit">Submit</button>
+					<button data-indicator:fetching data-on:click="@post('/visits/log-visit', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
+					<div data-show="$fetching">Loading...</div>
 				</section>
 			</form>
 		</div>
@@ -153,10 +168,17 @@ templ LogVisit(vm visitVM) {
 
 templ Thanks() {
 	@Layout() {
-		<div id="confirmation">
+		<div id="log-visit">
+			<script>
+				function redirect() {
+					window.location = "/visits/choose-customer";
+				}
+				setTimeout(redirect, 2000);
+			</script>
 			<h1>Thanks</h1>
-			<p>Data uploaded</p>
-			<p><a href="/">&lt; back home</a></p>
+			<p>We've added your visit to the database</p>
+			<p>You'll now be redirected back to the homepage</p>
+			<p><a href="/">&lt; Home</a></p>
 		</div>
 	}
 }

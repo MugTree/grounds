@@ -161,7 +161,7 @@ func ChooseLocation(vm PickLocationVm) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<article id=\"choose-location\"><hgroup><h2>Step 2: choose a location</h2><p>Where do  you plan to visit</p></hgroup><form action=\"choose-location\" method=\"post\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<article id=\"choose-location\"><hgroup><h2>Step 2: choose a location</h2><p>Which of [CUSTOMER NAME] locations are you visiting?</p></hgroup><form action=\"choose-location\" method=\"post\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -278,33 +278,33 @@ func LogVisit(vm visitVM) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<style>\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <article id=\"log-visit\"><section><hgroup><h2>Step 3: record the visit</h2><p>Please add any information for ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<style>\n\t\t.show {display: block;}\n\t\t.hide {display: none;}\n\t</style> <article id=\"log-visit\"><section><hgroup><h2>Step 3: record the visit</h2><p>Please add any information for <b>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(vm.CustomerName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " from the ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</b> from the <b>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(vm.LocationName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 85}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `app/templates.templ`, Line: 128, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " site</p></hgroup></section><section><form enctype=\"multipart/form-data\" method=\"post\" id=\"visit-form\"><section><input type=\"hidden\" name=\"location-id\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</b> site</p></hgroup></section><section><form enctype=\"multipart/form-data\" method=\"post\" id=\"visit-form\"><section><input type=\"hidden\" name=\"location-id\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

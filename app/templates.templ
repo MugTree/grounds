@@ -89,7 +89,7 @@ templ ChooseLocation(vm PickLocationVm) {
 		<article id="choose-location">
 			<hgroup>
 				<h2>Step 2: choose a location</h2>
-				<p>Where do  you plan to visit</p>
+				<p>Which of [CUSTOMER NAME] locations are you visiting?</p>
 			</hgroup>
 			<form action="choose-location" method="post">
 				if len(vm.Locations) != 0 {
@@ -125,7 +125,7 @@ templ LogVisit(vm visitVM) {
 			<section>
 				<hgroup>
 					<h2>Step 3: record the visit</h2>
-					<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
+					<p>Please add any information for <b>{ vm.CustomerName }</b> from the <b>{ vm.LocationName }</b> site</p>
 				</hgroup>
 			</section>
 			<section>

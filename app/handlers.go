@@ -57,6 +57,8 @@ func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
 func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		fmt.Println("asdfadfsss")
+
 		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
 		if !ok {
 			return

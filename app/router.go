@@ -1,6 +1,8 @@
 package app
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"embed"
 	"fmt"
 	"log"
@@ -30,25 +32,25 @@ var staticFS embed.FS
 
 func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	r := chi.NewRouter()
-	fs := http.FileServerFS(staticFS)
-	r.Handle("/public/*", neuter(fs))
+	r.Handle("/public/*", neuter(http.FileServer(http.FS(staticFS))))
 
-	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		http.Redirect(w, r, "/visits/choose-customer", 303)
+	r.Group(func(site chi.Router) {
+		site.Use(basicAuthMiddleware("matt", "test"))
+
+		site.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/visits/choose-customer", 303)
+		})
+
+		site.Route("/visits", func(r chi.Router) {
+			r.Get("/choose-customer", chooseCustomer(db))
+			r.Post("/choose-customer", chooseCustomerSubmit(db))
+			r.Get("/{customer_id}/choose-location", chooseLocation(db))
+			r.Post("/{customer_id}/choose-location", choosteLocationSubmit(db))
+			r.Get("/{location_id}/log-visit", logVisit(db))
+			r.Post("/log-visit", logVisitSubmit(db, uploadsDir))
+		})
 	})
 
-	r.Route("/visits", func(r chi.Router) {
-		r.Get("/choose-customer", chooseCustomer(db))
-		r.Post("/choose-customer", chooseCustomerSubmit(db))
-		r.Get("/{customer_id}/choose-location", chooseLocation(db))
-		r.Post("/{customer_id}/choose-location", choosteLocationSubmit(db))
-		r.Get("/{location_id}/log-visit", logVisit(db))
-		r.Post("/log-visit", logVisitSubmit(db, uploadsDir))
-	})
-
-	r.Get("/testing", func(w http.ResponseWriter, r *http.Request) {
-		TestPage().Render(r.Context(), w)
-	})
 	return r
 }
 
@@ -76,6 +78,31 @@ func neuter(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func basicAuthMiddleware(user string, user_password string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			if ok {
+				usernameHash := sha256.Sum256([]byte(username))
+				passwordHash := sha256.Sum256([]byte(password))
+				expectedUsernameHash := sha256.Sum256([]byte(user))
+				expectedPasswordHash := sha256.Sum256([]byte(user_password))
+
+				usernameMatch := subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1
+				passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1
+
+				if usernameMatch && passwordMatch {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		})
+	}
 }
 
 func LogInfo(msg string)  { log.Println("INFO: " + msg) }

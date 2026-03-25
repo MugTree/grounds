@@ -8,6 +8,7 @@ templ Layout() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>Document</title>
 			<script type="module" src="/public/js/datastar.js"></script>
+			<link rel="apple-touch-icon" href="icon-192.png"/>
 			<link rel="manifest" href="/public/js/manifest.json"/>
 			<link href="/public/css/pico.css" rel="stylesheet"/>
 			<link href="/public/css/main.css" rel="stylesheet"/>
@@ -16,26 +17,6 @@ templ Layout() {
 
 </script>
 		<body>
-			// 			<button id="installBtn" hidden>Install App</button>
-			// 			<script>
-			// let deferredPrompt;
-			// const installBtn = document.getElementById('installBtn');
-			// window.addEventListener('beforeinstallprompt', (e) => {
-			//   e.preventDefault();
-			//   deferredPrompt = e;
-			//   installBtn.hidden = false;
-			// });
-			// installBtn.addEventListener('click', async () => {
-			//   if (!deferredPrompt) return;
-			//   deferredPrompt.prompt();
-			//   const choice = await deferredPrompt.userChoice;
-			//   if (choice.outcome === 'accepted') {
-			//     console.log('User installed app');
-			//   }
-			//   deferredPrompt = null;
-			//   installBtn.hidden = true;
-			// });
-			// </script>
 			<header>
 				<h4><a href="/">Visit tracker demo</a></h4>
 			</header>
@@ -44,10 +25,11 @@ templ Layout() {
 			</main>
 			<footer></footer>
 			<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/public/js/service-worker.js');
-}
-</script>
+				if ('serviceWorker' in navigator) {
+  					navigator.serviceWorker.register('/public/js/service-worker.js')
+					.then(() => console.log('Service Worker registered'));
+				}
+			</script>
 			<script src="/public/js/script.js"></script>
 		</body>
 	</html>
@@ -220,19 +202,5 @@ templ VisitError() {
 templ ErrorPage() {
 	@Layout() {
 		<h1>500 - server error</h1>
-	}
-}
-
-templ TestPage() {
-	@Layout() {
-		<div>form test</div>
-		<form enctype="multipart/form-data" id="visit-form" action="/visit/add/3/" method="post">
-			<div class="box">
-				<label for="updated-photos">Upload images</label>
-				<input id="updated-photos" name="updated-photos" type="file" accept="image/*" capture="environment" multiple/>
-			</div>
-			<hr/>
-			<button type="submit">Submit</button>
-		</form>
 	}
 }

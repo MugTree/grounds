@@ -1,6 +1,6 @@
 {
-  "name": "Visit tracker app",
-  "short_name": "Visits",
+  "name": "Visit tracker",
+  "short_name": "Visit tracker",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

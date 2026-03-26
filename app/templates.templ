@@ -1,5 +1,7 @@
 package app
 
+import "fmt"
+
 templ Layout() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -65,9 +67,9 @@ templ ChooseCustomer(vm PickCustomerVm) {
 				<button type="submit">Submit</button>
 			</form>
 		</section>
-		// <section>
-		// 	<h2>Previous visits</h2>
-		// </section>
+		<section>
+			<h2>Previous visits</h2>
+		</section>
 	}
 }
 
@@ -175,20 +177,30 @@ templ LogVisit(vm visitVM) {
 	}
 }
 
-templ Thanks() {
+templ Confirmation(vm ConfirmationVm) {
 	@Layout() {
 		<div id="log-visit">
-			<script>
-				function redirect() {
-					window.location = "/visits/choose-customer";
-				}
-				setTimeout(redirect, 2000);
-			</script>
 			<section>
-				<h1>Thanks</h1>
-				<p>We've added your visit to the database</p>
-				<p>You'll now be redirected back to the homepage</p>
-				<p><a href="/">&lt; Home</a></p>
+				<h1>Confirmation</h1>
+				<p>Please confirm that the details below are correct...</p>
+				<form action="/visits/log-visit/confirm" method="post">
+					<input type="hidden" name="confirm" value={ vm.VisitId }/>
+					<ul>
+						<li>Time: { vm.Time }</li>
+						<li>Date: { vm.Date }</li>
+						<li>Duration: { vm.Duration }</li>
+					</ul>
+					<section id="thumbs">
+						for _, i := range vm.ImagePaths {
+							<img src={ i }/>
+						}
+					</section>
+					<div class="grid">
+						<button type="submit">Submit</button>
+						{{ backUrl := templ.SafeURL(fmt.Sprintf("/visits/%v/log-visit", vm.LocationId)) }}
+						<a role="button" class="secondary" href={ backUrl }>Back</a>
+					</div>
+				</form>
 			</section>
 		</div>
 	}

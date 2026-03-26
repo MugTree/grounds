@@ -35,6 +35,7 @@ type HomepageVm struct {
 type PickCustomerVm struct {
 	Customers []Customer
 	HasError  bool
+	//PreviousVisits []
 }
 
 type PickLocationVm struct {
@@ -168,7 +169,7 @@ func handleLocationError(
 	)
 }
 
-func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (int, error) {
+func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
 	notes := r.FormValue("visit-notes")
 	locationId := r.FormValue("location-id")
@@ -252,7 +253,7 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (int, error) 
 		return 0, err
 	}
 
-	return locationInt, nil
+	return vid, nil
 }
 
 func saveThumbnail(src io.Reader, relPath, uploadsDir string) error {
@@ -395,23 +396,23 @@ const (
 
 	// --------------------------------------
 
-	SaveImageSql = `INSERT INTO images (visit_id, filename, original_name, mimetype, size, created_at) VALUES($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);`
+	SaveImageSql string = `INSERT INTO images (visit_id, filename, original_name, mimetype, size, created_at) VALUES($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);`
 
 	// --------------------------------------
 
-	InsertVisitSql = `INSERT INTO visits (location_id, employee_id, notes) VALUES ($1, $2, $3);`
+	InsertVisitSql string = `INSERT INTO visits (location_id, employee_id, notes) VALUES ($1, $2, $3);`
 
 	// --------------------------------------
 
-	SelectCustomersSql = `SELECT * FROM customer;`
+	SelectCustomersSql string = `SELECT * FROM customer;`
 
 	// --------------------------------------
 
-	SelectLocationsSql = `SELECT * FROM location;`
+	SelectLocationsSql string = `SELECT * FROM location;`
 
 	// ----------------------------------------
 
-	SelectCustomerByIdSql = `SELECT * FROM customer WHERE id = $1`
+	SelectCustomerByIdSql string = `SELECT * FROM customer WHERE id = $1`
 
 	// SelectLocationsByCustomerIdSql = `
 	// 	SELECT
@@ -425,7 +426,7 @@ const (
 
 	// --------------------------------------
 
-	SelectLocationById = `
+	SelectLocationById string = `
  		SELECT
 			l.name AS location_name,
 			c.name AS customer_name,
@@ -480,6 +481,15 @@ type visitVM struct {
 	CustomerName string
 	LocationName string
 	LocationId   string
+}
+
+type ConfirmationVm struct {
+	LocationId string
+	VisitId    string
+	Time       string
+	Date       string
+	Duration   string
+	ImagePaths []string
 }
 
 func LogInfo(msg string)  { log.Println("INFO: " + msg) }

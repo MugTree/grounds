@@ -183,24 +183,47 @@ func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			}
 		}
 
-		_, err := logVisitData(db, r, uploadsDir)
+		visitId, err := logVisitData(db, r, uploadsDir)
+
+		fmt.Println("visit id is: ", visitId)
+
 		if err != nil {
 			renderServerError(w, r, err.Error())
 			return
 		}
 
-		time.Sleep(1 * time.Second)
-
-		LogInfo("stage 2 finished and redirecting")
+		LogInfo("logVisitSubmit")
 
 		sse := datastar.NewSSE(w, r)
-		sse.PatchElementTempl(Thanks())
+
+		// data will be in an odd shape but complete
+
+		simplerSqlDisentangle := `
+		SELECT
+      		*
+		FROM visits v
+		INNER JOIN employee e ON e.id = v.employee_id
+		WHERE v.id = ?;
+		SELECT* from images where visit_id = ?`
+
+		fmt.Println(simplerSqlDisentangle)
+
+		vm := ConfirmationVm{}
+		//vm.Date
+
+		sse.PatchElementTempl(Confirmation(vm))
 
 	}
 }
 
-func logVisitConfirm() http.HandlerFunc {
+func logVisitConfirm(_ *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		visitId := r.FormValue("visit_id")
+
+		fmt.Println(visitId)
+
+		// update the visit
 
 	}
 }

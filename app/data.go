@@ -10,6 +10,7 @@ import (
 	"image"
 	"image/jpeg"
 	_ "image/jpeg"
+	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -480,3 +481,6 @@ type visitVM struct {
 	LocationName string
 	LocationId   string
 }
+
+func LogInfo(msg string)  { log.Println("INFO: " + msg) }
+func LogError(msg string) { log.Println("ERROR: " + msg) }

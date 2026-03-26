@@ -10,7 +10,10 @@ templ Layout() {
 			<script type="module" src="/public/js/datastar.js"></script>
 			<link rel="apple-touch-icon" href="icon-192.png"/>
 			<link rel="manifest" href="/public/js/manifest.json"/>
-			<link href="/public/css/pico.css" rel="stylesheet"/>
+			<link
+				rel="stylesheet"
+				href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+			/>
 			<link href="/public/css/main.css" rel="stylesheet"/>
 		</head>
 		<script>
@@ -30,6 +33,17 @@ templ Layout() {
 			<script src="/public/js/script.js"></script>
 		</body>
 	</html>
+}
+
+templ IndexPage() {
+	@Layout() {
+		<section>
+			<h1>Demos</h1>
+			<ul>
+				<li><a href="/visits/choose-customer">Create a visit</a></li>
+			</ul>
+		</section>
+	}
 }
 
 templ ChooseCustomer(vm PickCustomerVm) {

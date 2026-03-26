@@ -29,16 +29,14 @@ var staticFS embed.FS
 	show employees
 */
 
-func AppSetup(db *sqlx.DB, uploadsDir string) chi.Router {
+func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	r := chi.NewRouter()
 	r.Handle("/public/*", neuter(http.FileServer(http.FS(staticFS))))
 
 	r.Group(func(site chi.Router) {
 		site.Use(basicAuthMiddleware("matt", "test"))
 
-		site.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			http.Redirect(w, r, "/visits/choose-customer", 303)
-		})
+		site.HandleFunc("/", indexPage())
 
 		site.Route("/visits", func(r chi.Router) {
 			r.Get("/choose-customer", chooseCustomer(db))

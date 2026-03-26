@@ -73,7 +73,7 @@ function renderThumbs(input) {
 
     img.src = t.url;
     img.className = "thumb-preview";
-    img.style.width = "100px";
+    img.style.width = "140px";
     img.style.cursor = "pointer";
     img.style.margin = "4px";
     img.title = "Click to remove";

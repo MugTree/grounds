@@ -10,6 +10,12 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 )
 
+func indexPage() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		IndexPage().Render(r.Context(), w)
+	}
+}
+
 type JourneyData struct {
 	CustomerId int
 	LocationId int
@@ -184,6 +190,11 @@ func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 		}
 
 		time.Sleep(1 * time.Second)
+
+		// get this to run a confirmation page showing thumbs and measurements etc...
+		// with a second confimation
+		// commit the data or delete and start again
+
 		LogInfo("stage 2 finished and redirecting")
 
 		sse := datastar.NewSSE(w, r)

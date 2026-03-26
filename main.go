@@ -60,7 +60,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.AppSetup(db, uploadsDir)
+			return app.ServerSetup(db, uploadsDir)
 		}
 	}
 

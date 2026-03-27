@@ -166,64 +166,101 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-// will use datastar to make the form submission then i can return some HMTL into the page
 func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		ct := r.Header.Get("Content-Type")
-		if strings.HasPrefix(ct, "multipart/form-data") {
-			err := r.ParseMultipartForm(10 << 20)
-			if err != nil {
-				renderServerError(w, r, fmt.Sprintf("http: multipart form error - %v", err))
-			}
-		} else {
-			err := r.ParseForm()
-			if err != nil {
-				renderServerError(w, r, fmt.Sprintf("http: form parse error - %v", err))
-			}
+		fmt.Println("ok")
+		r, err := parseMultipart(r)
+		if err != nil {
+			renderServerError(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
+			return
+		}
+
+		sse := datastar.NewSSE(w, r)
+		vm := validateVisitSubmission(r)
+
+		if vm.HasErrors() {
+			sse.PatchElementTempl(LogVisit(vm))
+			return
 		}
 
 		visitId, err := logVisitData(db, r, uploadsDir)
-
-		fmt.Println("visit id is: ", visitId)
-
 		if err != nil {
 			renderServerError(w, r, err.Error())
 			return
 		}
 
-		LogInfo("logVisitSubmit")
+		// var imagePaths = []string{}
 
-		sse := datastar.NewSSE(w, r)
+		// db.SelectContext(r.Context(), &imagePaths, `SELECT * from images where visit_id = ?;`, visitId)
+
+		// username
+		// images
+		// visit_date
+		// visit_time
+		// ...
+
+		fmt.Println("visit id is: ", visitId)
+
+		LogInfo("logVisitSubmit")
 
 		// data will be in an odd shape but complete
 
-		simplerSqlDisentangle := `
-		SELECT
-      		*
-		FROM visits v
-		INNER JOIN employee e ON e.id = v.employee_id
-		WHERE v.id = ?;
-		SELECT* from images where visit_id = ?`
+		// simplerSqlDisentangle := `
+		// SELECT
+		// 	*
+		// FROM visits v
+		// INNER JOIN employee e ON e.id = v.employee_id
+		// WHERE v.id = ?;
+		// SELECT* from images where visit_id = ?`
 
-		fmt.Println(simplerSqlDisentangle)
+		// fmt.Println(simplerSqlDisentangle)
 
-		vm := ConfirmationVm{}
-		//vm.Date
-
-		sse.PatchElementTempl(Confirmation(vm))
+		cvm := ConfirmationVm{}
+		sse.PatchElementTempl(Confirmation(cvm))
 
 	}
 }
 
-func logVisitConfirm(_ *sqlx.DB) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+type dateSignals struct {
+	VisitDate string `json:"visit_date"`
+}
 
-		visitId := r.FormValue("visit_id")
+func validateVisitDate(w http.ResponseWriter, r *http.Request) {
+	ds := dateSignals{}
+	datastar.ReadSignals(r, &ds)
+	isValid := validateDate(ds.VisitDate)
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(VisitDateInput(true, isValid))
+}
 
-		fmt.Println(visitId)
+type timeSignals struct {
+	VisitTime string `json:"visit_time"`
+}
 
-		// update the visit
+func validateVisitTime(w http.ResponseWriter, r *http.Request) {
+	ts := timeSignals{}
+	datastar.ReadSignals(r, &ts)
+	fmt.Println(ts)
+	isValid := validateTime(ts.VisitTime)
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(VisitTimeInput(true, isValid))
+}
 
+func parseMultipart(r *http.Request) (*http.Request, error) {
+
+	ct := r.Header.Get("Content-Type")
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			return r, err
+		}
+	} else {
+		err := r.ParseForm()
+		if err != nil {
+			return r, err
+		}
 	}
+
+	return r, nil
 }

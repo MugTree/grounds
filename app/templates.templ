@@ -107,6 +107,13 @@ templ BackButton() {
 	<span style="float: right;"><a href="#" onclick="history.back(); return false;">&lt; Back</a></span>
 }
 
+func setAriaValidity(val bool) string {
+	if val {
+		return "true"
+	}
+	return "false"
+}
+
 templ LogVisit(vm visitVM) {
 	@Layout() {
 		<div id="log-visit">
@@ -116,39 +123,23 @@ templ LogVisit(vm visitVM) {
 				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
 				<form enctype="multipart/form-data" method="post" id="visit-form">
 					<section>
-						<input type="hidden" name="location-id" value={ vm.LocationId }/>
-						<input type="hidden" name="location-name" value={ vm.LocationName }/>
-						<input type="hidden" name="customer-name" value={ vm.CustomerName }/>
+						<input type="hidden" name="location_id" value={ vm.LocationId }/>
+						<input type="hidden" name="location_name" value={ vm.LocationName }/>
+						<input type="hidden" name="customer_name" value={ vm.CustomerName }/>
 						<div class="grid">
-							<label for="visit-date">
-								Visit date
-								<input
-									type="date"
-									id="visit-date"
-									name="visit-date"
-									required
-								/>
-							</label>
-							<label for="visit-time">
-								Visit start time
-								<input
-									type="time"
-									id="visit-time"
-									name="visit-time"
-									required
-								/>
-							</label>
+							@VisitDateInput(false, false)
+							@VisitTimeInput(false, false)
 						</div>
 						<div>
 							<label for="visit-notes">
 								Vist notes
-								<textarea name="visit-notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
+								<textarea name="visit_notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
 							</label>
 						</div>
 						<div class="grid">
 							<label for="visit-duration">
 								Approx visit duration
-								<input id="visit-duration" name="visit-duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
+								<input id="visit-duration" name="visit_duration" list="durations" type="range" min="1" max="4" step="1" value="2" style="--pico-selected-ratio: 0%;"/>
 								<datalist id="durations">
 									<option value="15">15 min</option>
 									<option value="30">30 min</option>
@@ -156,25 +147,74 @@ templ LogVisit(vm visitVM) {
 									<option value="60">1 hour</option>
 								</datalist>
 							</label>
-							<label for="original-photos">
+							<label for="visit-photos">
 								Visit images
-								<input class="original-photos" data-on:change="resizePhotos(evt)" id="original-photos" name="original-photos" type="file" accept="image/*" capture="environment" multiple/>
+								<input class="visit-photos" data-on:change="resizePhotos(evt)" id="visit-photos" name="visit_photos" type="file" accept="image/*" capture="environment" multiple/>
 							</label>
 						</div>
 						<section id="thumbs"></section>
-						<section>
-							<label for="confirm">
-								All the data looks ok?
-								<input type="checkbox" name="confirm" id="confirm" required/>
-							</label>
-						</section>
-						<button style="width: 100%;" data-indicator:fetching data-on:click="@post('/visits/log-visit', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
+						<button style="width: 100%;" data-indicator:fetching data-on:click="@post('/visits/log-visit/', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
 						<div data-show="$fetching">Loading...</div>
 					</section>
 				</form>
 			</section>
 		</div>
+		// <script>
+		// 	const dateField = document.getElementById('visit-date');
+		// 	dateField.addEventListener('change', function () {
+		// 		const value = this.value;
+		// 		const isValid = value && !isNaN(new Date(value).getTime());
+		// 		this.setAttribute('aria-invalid', String(!isValid));
+		// 	});
+		// 	const timeField = document.getElementById('visit-time');
+		// 	timeField.addEventListener('change', function () {
+		// 		const value = this.value;
+		// 		// Valid HTML time format = HH:MM (24-hour)
+		// 		const isValid = /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
+		// 		this.setAttribute('aria-invalid', String(!isValid));
+		// 	});
+		// </script>
 	}
+}
+
+templ VisitDateInput(isSubmission bool, isValid bool) {
+	<label for="visit-date" id="visit-date-layout">
+		Visit date
+		<input
+			type="date"
+			id="visit-date"
+			name="visit_date"
+			data-bind="visit_date"
+			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-date`, {filterSignals: {include: '^visit_date$'}})"
+			if isSubmission {
+				if !isValid {
+					aria-invalid="true"
+				} else {
+					aria-invalid="false"
+				}
+			}
+		/>
+	</label>
+}
+
+templ VisitTimeInput(isSubmission bool, isValid bool) {
+	<label for="visit-time" id="visit-time-layout">
+		Visit start time
+		<input
+			type="time"
+			id="visit-time"
+			name="visit_time"
+			data-bind:visit_time
+			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-time`, {filterSignals: {include: '^visit_time$'}})"
+			if isSubmission {
+				if !isValid {
+					aria-invalid="true"
+				} else {
+					aria-invalid="false"
+				}
+			}
+		/>
+	</label>
 }
 
 templ Confirmation(vm ConfirmationVm) {
@@ -190,11 +230,11 @@ templ Confirmation(vm ConfirmationVm) {
 						<li>Date: { vm.Date }</li>
 						<li>Duration: { vm.Duration }</li>
 					</ul>
-					<section id="thumbs">
-						for _, i := range vm.ImagePaths {
-							<img src={ i }/>
-						}
-					</section>
+					// <section id="thumbs">
+					// 	for _, i := range vm.ImagePaths {
+					// 		<img src={ i }/>
+					// 	}
+					// </section>
 					<div class="grid">
 						<button type="submit">Submit</button>
 						{{ backUrl := templ.SafeURL(fmt.Sprintf("/visits/%v/log-visit", vm.LocationId)) }}

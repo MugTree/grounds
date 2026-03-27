@@ -169,10 +169,55 @@ func handleLocationError(
 	)
 }
 
+func validateDate(input string) bool {
+	_, err := time.Parse("2006-01-02", input)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func validateTime(input string) bool {
+	_, err := time.Parse("15:04", input)
+	if err != nil {
+		return false
+	}
+	return true
+}
+
+func validateVisitSubmission(r *http.Request) visitVM {
+
+	vm := visitVM{}
+	/* in a realistic scenario we would validate
+	everything
+	not just date and time
+	*/
+
+	vm.CustomerId = r.FormValue("customer_id")
+	vm.CustomerName = r.FormValue("customer_name")
+	vm.LocationId = r.FormValue("location_id")
+	vm.LocationName = r.FormValue("location_name")
+	vm.Date = r.FormValue("visit_date")
+	vm.Time = r.FormValue("visit_date")
+	vm.Duration = r.FormValue("visit_duration")
+	vm.IsSubmission = true
+
+	if r.FormValue("visit_date") == "" {
+		vm.HasDateError = true
+	}
+
+	if r.FormValue("visit_time") == "" {
+		vm.HasTimeError = true
+	}
+
+	return vm
+
+}
+
 func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
-	notes := r.FormValue("visit-notes")
-	locationId := r.FormValue("location-id")
+	notes := r.FormValue("visit_notes")
+	locationId := r.FormValue("location_id")
 
 	locationInt, err := strconv.Atoi(locationId)
 	if err != nil {
@@ -475,12 +520,28 @@ type getLocSignals struct {
 
 type visitVM struct {
 	Date         string
+	Time         string
 	Duration     string
 	Notes        string
 	CustomerId   string
 	CustomerName string
 	LocationName string
 	LocationId   string
+	IsComplete   bool
+	IsSubmission bool
+	VisitVMErrors
+}
+
+func (v visitVM) HasErrors() bool {
+	if v.HasDateError || v.HasTimeError {
+		return true
+	}
+	return false
+}
+
+type VisitVMErrors struct {
+	HasTimeError bool
+	HasDateError bool
 }
 
 type ConfirmationVm struct {

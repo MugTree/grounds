@@ -42,9 +42,18 @@ func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 			r.Post("/choose-customer", chooseCustomerSubmit(db))
 			r.Get("/{customer_id}/choose-location", chooseLocation(db))
 			r.Post("/{customer_id}/choose-location", choosteLocationSubmit(db))
+
+			// return the form fresh
 			r.Get("/{location_id}/log-visit", logVisit(db))
-			r.Post("/log-visit", logVisitSubmit(db, uploadsDir))
-			r.Post("/log-visit/confirm", logVisitConfirm(db))
+
+			// will need some signals here
+			// -----------------------------------
+			r.Route("/log-visit", func(r chi.Router) {
+				r.Post("/", logVisitSubmit(db, uploadsDir))
+				r.Post("/validate-date", validateVisitDate)
+				r.Post("/validate-time", validateVisitTime)
+			})
+
 		})
 	})
 

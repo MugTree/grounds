@@ -26,3 +26,14 @@ goose -dir ./data/seeds -no-versioning up
 
 * images thumbs (size and formatting)
 * use datastar to make the final submission and swap out some html rather than the redundant redirect
+
+Visit form submission. Use datastar - Validate on the server and use datastar either to send back an invalid form
+or a panel showing the user what they have inputted and a chance to confirm
+
+This will involve - creating the record up front - and when the user confirms we amend the visit record to be confirmed.
+Validation is initially just a test for an empty value, we can build from there
+
+post
+validate
+if invalid
+return form with errors

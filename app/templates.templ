@@ -127,11 +127,11 @@ templ LogVisit(vm visitVM) {
 						<input type="hidden" name="location_name" value={ vm.LocationName }/>
 						<input type="hidden" name="customer_name" value={ vm.CustomerName }/>
 						<div class="grid">
-							@VisitDateInput(false, false)
-							@VisitTimeInput(false, false)
+							@VisitDateInput(vm.IsSubmission, vm.HasDateError)
+							@VisitTimeInput(vm.IsSubmission, vm.HasTimeError)
 						</div>
 						<div>
-							@VisitNotesInput(false, false)
+							@VisitNotesInput(vm.IsSubmission, vm.HasNotesError)
 						</div>
 						<div class="grid">
 							<label for="visit-duration">
@@ -159,7 +159,7 @@ templ LogVisit(vm visitVM) {
 	}
 }
 
-templ VisitDateInput(isSubmission bool, isValid bool) {
+templ VisitDateInput(isSubmission bool, isInvalid bool) {
 	<label for="visit-date" id="visit-date-layout">
 		Visit date
 		<input
@@ -169,7 +169,7 @@ templ VisitDateInput(isSubmission bool, isValid bool) {
 			data-bind="visit_date"
 			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-date`, {filterSignals: {include: '^visit_date$'}})"
 			if isSubmission {
-				if !isValid {
+				if isInvalid {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"
@@ -179,7 +179,7 @@ templ VisitDateInput(isSubmission bool, isValid bool) {
 	</label>
 }
 
-templ VisitNotesInput(isSubmission bool, isValid bool) {
+templ VisitNotesInput(isSubmission bool, isInvalid bool) {
 	<label for="visit-notes" id="visit-notes-layout">
 		Vist notes
 		<textarea
@@ -189,7 +189,7 @@ templ VisitNotesInput(isSubmission bool, isValid bool) {
 			data-bind="visit_notes"
 			data-on:blur__debounce.100ms="@post(`/visits/log-visit/validate-notes`, {filterSignals: {include: '^visit_notes$'}})"
 			if isSubmission {
-				if !isValid {
+				if isInvalid {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"
@@ -199,7 +199,7 @@ templ VisitNotesInput(isSubmission bool, isValid bool) {
 	</label>
 }
 
-templ VisitTimeInput(isSubmission bool, isValid bool) {
+templ VisitTimeInput(isSubmission bool, isInvalid bool) {
 	<label for="visit-time" id="visit-time-layout">
 		Visit start time
 		<input
@@ -209,7 +209,7 @@ templ VisitTimeInput(isSubmission bool, isValid bool) {
 			data-bind:visit_time
 			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-time`, {filterSignals: {include: '^visit_time$'}})"
 			if isSubmission {
-				if !isValid {
+				if isInvalid {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"

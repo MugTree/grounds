@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
@@ -169,58 +168,6 @@ func handleLocationError(
 	)
 }
 
-func validateDate(input string) bool {
-	_, err := time.Parse("2006-01-02", input)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func validateTime(input string) bool {
-	_, err := time.Parse("15:04", input)
-	if err != nil {
-		return false
-	}
-	return true
-}
-
-func validateNotes(_ string) bool {
-	return true
-}
-
-func validateVisitSubmission(r *http.Request) visitVM {
-
-	vm := visitVM{}
-	/* in a realistic scenario we would validate
-	everything
-	not just date and time
-	*/
-
-	vm.CustomerId = r.FormValue("customer_id")
-	vm.CustomerName = r.FormValue("customer_name")
-	vm.LocationId = r.FormValue("location_id")
-	vm.LocationName = r.FormValue("location_name")
-	vm.Date = r.FormValue("visit_date")
-	vm.Time = r.FormValue("visit_date")
-	vm.Duration = r.FormValue("visit_duration")
-	vm.IsSubmission = true
-
-	fmt.Println("from form - visit date", r.FormValue("visit_date"))
-	fmt.Println("from form - visit time", r.FormValue("visit_time"))
-
-	if r.FormValue("visit_date") == "" {
-		vm.HasDateError = true
-	}
-
-	if r.FormValue("visit_time") == "" {
-		vm.HasTimeError = true
-	}
-
-	return vm
-
-}
-
 func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
 	notes := r.FormValue("visit_notes")
@@ -358,40 +305,6 @@ func saveThumbnail(src io.Reader, relPath, uploadsDir string) error {
 	}
 
 	return os.Rename(tmpPath, thumbPath)
-}
-
-// image.DecodeConfig proves that the file bytes are decodable as an image format the go actually understands
-// only allows jpges atm
-func validateUpload(file io.ReadSeeker) (string, string, error) {
-	buf := make([]byte, 512)
-
-	n, err := file.Read(buf)
-	if err != nil {
-		return "", "", err
-	}
-
-	mimeType := http.DetectContentType(buf[:n])
-
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		return "", "", err
-	}
-
-	_, _, err = image.DecodeConfig(file)
-	if err != nil {
-		return "", "", errors.New("invalid image data")
-	}
-
-	_, err = file.Seek(0, 0)
-	if err != nil {
-		return "", "", err
-	}
-
-	if mimeType != "image/jpeg" {
-		return "", "", errors.New("unsupported image type")
-	}
-
-	return mimeType, ".jpg", nil
 }
 
 // eg. 2026/03/19/86d276d2b8970e96.jpg
@@ -547,8 +460,9 @@ func (v visitVM) HasErrors() bool {
 }
 
 type VisitVMErrors struct {
-	HasTimeError bool
-	HasDateError bool
+	HasTimeError  bool
+	HasDateError  bool
+	HasNotesError bool
 }
 
 type ConfirmationVm struct {

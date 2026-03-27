@@ -461,11 +461,11 @@ func LogVisit(vm visitVM) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = VisitDateInput(false, false).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = VisitDateInput(vm.IsSubmission, vm.HasDateError).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = VisitTimeInput(false, false).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = VisitTimeInput(vm.IsSubmission, vm.HasTimeError).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -473,7 +473,7 @@ func LogVisit(vm visitVM) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = VisitNotesInput(false, false).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = VisitNotesInput(vm.IsSubmission, vm.HasNotesError).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -491,7 +491,7 @@ func LogVisit(vm visitVM) templ.Component {
 	})
 }
 
-func VisitDateInput(isSubmission bool, isValid bool) templ.Component {
+func VisitDateInput(isSubmission bool, isInvalid bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -517,7 +517,7 @@ func VisitDateInput(isSubmission bool, isValid bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if !isValid {
+			if isInvalid {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -537,7 +537,7 @@ func VisitDateInput(isSubmission bool, isValid bool) templ.Component {
 	})
 }
 
-func VisitNotesInput(isSubmission bool, isValid bool) templ.Component {
+func VisitNotesInput(isSubmission bool, isInvalid bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -563,7 +563,7 @@ func VisitNotesInput(isSubmission bool, isValid bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if !isValid {
+			if isInvalid {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -583,7 +583,7 @@ func VisitNotesInput(isSubmission bool, isValid bool) templ.Component {
 	})
 }
 
-func VisitTimeInput(isSubmission bool, isValid bool) templ.Component {
+func VisitTimeInput(isSubmission bool, isInvalid bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -609,7 +609,7 @@ func VisitTimeInput(isSubmission bool, isValid bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if !isValid {
+			if isInvalid {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

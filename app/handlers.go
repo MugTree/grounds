@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -153,12 +154,14 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		vm := visitVM{
-			Date:         time.Now().Format("2006-01-02"),
-			Duration:     "60",
-			CustomerName: loc.CustomerName,
-			LocationName: loc.LocationName,
-			CustomerId:   loc.CustomerId,
-			LocationId:   loc.LocationId,
+			Date:          time.Now().Format("2006-01-02"),
+			Duration:      "60",
+			CustomerName:  loc.CustomerName,
+			LocationName:  loc.LocationName,
+			CustomerId:    loc.CustomerId,
+			LocationId:    loc.LocationId,
+			IsSubmission:  false,
+			VisitVMErrors: VisitVMErrors{HasTimeError: false, HasDateError: false},
 		}
 
 		LogInfo("starting log a location")
@@ -179,6 +182,7 @@ func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 		sse := datastar.NewSSE(w, r)
 		vm := validateVisitSubmission(r)
 
+		godump.Dump(vm)
 		if vm.HasErrors() {
 			sse.PatchElementTempl(LogVisit(vm))
 			return
@@ -229,7 +233,7 @@ type dateSignals struct {
 func validateVisitDate(w http.ResponseWriter, r *http.Request) {
 	ds := dateSignals{}
 	datastar.ReadSignals(r, &ds)
-	isValid := validateDate(ds.VisitDate)
+	isValid := isValidDate(ds.VisitDate)
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(VisitDateInput(true, isValid))
 }
@@ -242,7 +246,7 @@ func validateVisitTime(w http.ResponseWriter, r *http.Request) {
 	ts := timeSignals{}
 	datastar.ReadSignals(r, &ts)
 	fmt.Println(ts)
-	isValid := validateTime(ts.VisitTime)
+	isValid := isValidTime(ts.VisitTime)
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(VisitTimeInput(true, isValid))
 }
@@ -254,7 +258,7 @@ type notesSignals struct {
 func validateVisitNotes(w http.ResponseWriter, r *http.Request) {
 	ns := notesSignals{}
 	datastar.ReadSignals(r, &ns)
-	isValid := validateNotes(ns.VisitNotes)
+	isValid := areValidNotes(ns.VisitNotes)
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(VisitNotesInput(true, isValid))
 }

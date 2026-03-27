@@ -185,6 +185,10 @@ func validateTime(input string) bool {
 	return true
 }
 
+func validateNotes(_ string) bool {
+	return true
+}
+
 func validateVisitSubmission(r *http.Request) visitVM {
 
 	vm := visitVM{}
@@ -201,6 +205,9 @@ func validateVisitSubmission(r *http.Request) visitVM {
 	vm.Time = r.FormValue("visit_date")
 	vm.Duration = r.FormValue("visit_duration")
 	vm.IsSubmission = true
+
+	fmt.Println("from form - visit date", r.FormValue("visit_date"))
+	fmt.Println("from form - visit time", r.FormValue("visit_time"))
 
 	if r.FormValue("visit_date") == "" {
 		vm.HasDateError = true

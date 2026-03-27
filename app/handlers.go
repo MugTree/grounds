@@ -247,6 +247,18 @@ func validateVisitTime(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(VisitTimeInput(true, isValid))
 }
 
+type notesSignals struct {
+	VisitNotes string `json:"visit_notes"`
+}
+
+func validateVisitNotes(w http.ResponseWriter, r *http.Request) {
+	ns := notesSignals{}
+	datastar.ReadSignals(r, &ns)
+	isValid := validateNotes(ns.VisitNotes)
+	sse := datastar.NewSSE(w, r)
+	sse.PatchElementTempl(VisitNotesInput(true, isValid))
+}
+
 func parseMultipart(r *http.Request) (*http.Request, error) {
 
 	ct := r.Header.Get("Content-Type")

@@ -51,6 +51,7 @@ func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 			r.Route("/log-visit", func(r chi.Router) {
 				r.Post("/", logVisitSubmit(db, uploadsDir))
 				r.Post("/validate-date", validateVisitDate)
+				r.Post("/validate-notes", validateVisitNotes)
 				r.Post("/validate-time", validateVisitTime)
 			})
 

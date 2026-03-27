@@ -131,10 +131,7 @@ templ LogVisit(vm visitVM) {
 							@VisitTimeInput(false, false)
 						</div>
 						<div>
-							<label for="visit-notes">
-								Vist notes
-								<textarea name="visit_notes" id="visit-notes" placeholder="Some notes about the visit..."></textarea>
-							</label>
+							@VisitNotesInput(false, false)
 						</div>
 						<div class="grid">
 							<label for="visit-duration">
@@ -159,21 +156,6 @@ templ LogVisit(vm visitVM) {
 				</form>
 			</section>
 		</div>
-		// <script>
-		// 	const dateField = document.getElementById('visit-date');
-		// 	dateField.addEventListener('change', function () {
-		// 		const value = this.value;
-		// 		const isValid = value && !isNaN(new Date(value).getTime());
-		// 		this.setAttribute('aria-invalid', String(!isValid));
-		// 	});
-		// 	const timeField = document.getElementById('visit-time');
-		// 	timeField.addEventListener('change', function () {
-		// 		const value = this.value;
-		// 		// Valid HTML time format = HH:MM (24-hour)
-		// 		const isValid = /^([01]\d|2[0-3]):([0-5]\d)$/.test(value);
-		// 		this.setAttribute('aria-invalid', String(!isValid));
-		// 	});
-		// </script>
 	}
 }
 
@@ -194,6 +176,26 @@ templ VisitDateInput(isSubmission bool, isValid bool) {
 				}
 			}
 		/>
+	</label>
+}
+
+templ VisitNotesInput(isSubmission bool, isValid bool) {
+	<label for="visit-notes" id="visit-notes-layout">
+		Vist notes
+		<textarea
+			name="visit_notes"
+			id="visit-notes"
+			placeholder="Some notes about the visit..."
+			data-bind="visit_notes"
+			data-on:blur__debounce.100ms="@post(`/visits/log-visit/validate-notes`, {filterSignals: {include: '^visit_notes$'}})"
+			if isSubmission {
+				if !isValid {
+					aria-invalid="true"
+				} else {
+					aria-invalid="false"
+				}
+			}
+		></textarea>
 	</label>
 }
 

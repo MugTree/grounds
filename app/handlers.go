@@ -40,7 +40,7 @@ func chooseCustomerSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		if customerId == 0 {
+		if customerId == "0" {
 			ok, customers, _ := getHomepageData(db, w, r)
 			if !ok {
 				return
@@ -49,17 +49,21 @@ func chooseCustomerSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			ChooseCustomerTemplate(vm).Render(r.Context(), w)
 			return
 		}
-
-		url := fmt.Sprintf("/visits/%v/choose-location", customerId)
-		http.Redirect(w, r, url, http.StatusSeeOther)
+		updateJourneyCookie(w, r, map[string]string{
+			"customer_id": customerId,
+		})
+		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
 	}
 }
 
 func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
-		if !ok {
+		journey := readJourneyCookie(r)
+
+		customerId := journey["customer_id"]
+		if customerId == "" {
+			errorHandler(w, r, "http: error reading customer_id from cookie path")
 			return
 		}
 
@@ -68,7 +72,7 @@ func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		if customerId == 0 {
+		if customerId == "0" {
 			errorHandler(w, r, "http: tempered request")
 			return
 		}
@@ -93,13 +97,12 @@ func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// hidden value
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
 		if !ok {
 			return
 		}
 
-		if customerId == 0 {
+		if customerId == "0" {
 			errorHandler(w, r, "http: customer id not being set is 0")
 			return
 		}
@@ -109,7 +112,7 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		if locationId == 0 {
+		if locationId == "0" {
 			ok, _, locations := getHomepageData(db, w, r)
 			if !ok {
 				return
@@ -121,8 +124,11 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		url := fmt.Sprintf("/visits/%v/log-visit", locationId)
-		http.Redirect(w, r, url, http.StatusSeeOther)
+		updateJourneyCookie(w, r, map[string]string{
+			"location_id": locationId,
+		})
+
+		http.Redirect(w, r, "/visits/log-visit", http.StatusSeeOther)
 	}
 
 }
@@ -130,12 +136,17 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		locationId, ok := pathValueAsIntOrErr(w, r, "location_id")
-		if !ok {
+		journey := readJourneyCookie(r)
+
+		fmt.Println(journey)
+
+		locationId := journey["location_id"]
+		if locationId == "" {
+			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
 		}
 
-		if locationId == 0 {
+		if locationId == "0" {
 			errorHandler(w, r, "http: location_id is 0 this shouldn't happen")
 			return
 		}

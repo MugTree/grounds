@@ -81,7 +81,7 @@ templ ChooseLocationTemplate(vm PickLocationVm) {
 			<p>Which of { vm.CustomerName } locations are you visiting?</p>
 			<form action="choose-location" method="post">
 				if len(vm.Locations) != 0 {
-					if vm.CustomerId != 0 {
+					if vm.CustomerId != "0" {
 						<input type="hidden" name="customer_id" value={ vm.CustomerId }/>
 					}
 					<select

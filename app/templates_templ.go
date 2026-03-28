@@ -236,7 +236,7 @@ func ChooseLocationTemplate(vm PickLocationVm) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if len(vm.Locations) != 0 {
-				if vm.CustomerId != 0 {
+				if vm.CustomerId != "0" {
 					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<input type=\"hidden\" name=\"customer_id\" value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err

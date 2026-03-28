@@ -42,10 +42,15 @@ type notesSignals struct {
 	VisitNotes string `json:"visit_notes"`
 }
 
+type Journey struct {
+	CustomerID string `json:"customerId,omitempty"`
+	LocationID string `json:"locationId,omitempty"`
+}
+
 type Location struct {
-	Id         int    `db:"id"`
+	Id         string `db:"id"`
 	Name       string `db:"name"`
-	CustomerId int    `db:"customer_id"`
+	CustomerId string `db:"customer_id"`
 }
 
 type PickCustomerVm struct {
@@ -55,7 +60,7 @@ type PickCustomerVm struct {
 }
 
 type PickLocationVm struct {
-	CustomerId   int
+	CustomerId   string
 	CustomerName string
 	Locations    []Location
 	HasError     bool

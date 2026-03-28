@@ -28,15 +28,13 @@ func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 		site.Route("/visits", func(r chi.Router) {
 			r.Get("/choose-customer", chooseCustomerHandler(db))
 			r.Post("/choose-customer", chooseCustomerSubmitHandler(db))
-			r.Get("/{customer_id}/choose-location", chooseLocationHandler(db))
-			r.Post("/{customer_id}/choose-location", chooseLocationSubmitHandler(db))
-			r.Get("/{location_id}/log-visit", logVisitHandler(db))
-			r.Route("/log-visit", func(r chi.Router) {
-				r.Post("/confirm", logVisitSubmitHandler(db, uploadsDir))
-				r.Post("/validate-date", validateVisitDateHandler)
-				r.Post("/validate-notes", validateVisitNotesHandler)
-				r.Post("/validate-time", validateVisitTimeHandler)
-			})
+			r.Get("/choose-location", chooseLocationHandler(db))
+			r.Post("/choose-location", chooseLocationSubmitHandler(db))
+			r.Get("/log-visit", logVisitHandler(db))
+			r.Post("/log-visit/confirm", logVisitSubmitHandler(db, uploadsDir))
+			r.Post("/log-visit/validate-date", validateVisitDateHandler)
+			r.Post("/log-visit/validate-notes", validateVisitNotesHandler)
+			r.Post("/log-visit/validate-time", validateVisitTimeHandler)
 		})
 	})
 

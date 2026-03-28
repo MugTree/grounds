@@ -16,47 +16,50 @@ import (
 
 	"io"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/image/draw"
 )
 
-func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
+const journeyCookie string = "visitJourney"
+
+func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (string, bool) {
 
 	formVal := r.FormValue(key)
 
 	if formVal == "" {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
-		return 0, false
+		return "0", false
 	}
 
-	val, err := strconv.Atoi(formVal)
+	_, err := strconv.Atoi(formVal)
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
-		return 0, false
+		return "", false
 	}
 
-	return val, true
+	return formVal, true
 
 }
 
-func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
+func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (string, bool) {
 
 	formVal := r.PathValue(key)
 
 	if formVal == "" {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
-		return 0, false
+		return "0", false
 	}
 
-	val, err := strconv.Atoi(formVal)
+	_, err := strconv.Atoi(formVal)
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
-		return 0, false
+		return "0", false
 	}
 
-	return val, true
+	return formVal, true
 
 }
 
@@ -87,7 +90,7 @@ func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool,
 
 }
 
-func filteredLocations(locations []Location, customerId int) []Location {
+func filteredLocations(locations []Location, customerId string) []Location {
 	filtered := make([]Location, 0, len(locations))
 	for _, loc := range locations {
 		if loc.CustomerId == customerId {
@@ -323,6 +326,53 @@ func setAriaValidity(val bool) string {
 		return "true"
 	}
 	return "false"
+}
+
+// readJourneyCookie reads the cookie into a map
+func readJourneyCookie(r *http.Request) map[string]string {
+	values := make(map[string]string)
+	if c, err := r.Cookie(journeyCookie); err == nil {
+		parsed, _ := url.ParseQuery(c.Value)
+		for k, v := range parsed {
+			if len(v) > 0 {
+				values[k] = v[0]
+			}
+		}
+	}
+	return values
+}
+
+// updateJourneyCookie updates a flat key-value journey cookie
+func updateJourneyCookie(w http.ResponseWriter, r *http.Request, updates map[string]string) {
+	values := url.Values{}
+
+	// Read existing cookie
+	if c, err := r.Cookie(journeyCookie); err == nil {
+		existing, _ := url.ParseQuery(c.Value)
+		for k, v := range existing {
+			if len(v) > 0 {
+				values[k] = v
+			}
+		}
+	}
+
+	// Apply updates
+	for k, v := range updates {
+		if v != "" {
+			values.Set(k, v)
+		}
+	}
+
+	// Write back cookie
+	http.SetCookie(w, &http.Cookie{
+		Name:     journeyCookie,
+		Value:    values.Encode(),
+		Path:     "/",
+		HttpOnly: true,
+		Secure:   true,
+		Expires:  time.Now().Add(24 * time.Hour),
+		SameSite: http.SameSiteLaxMode,
+	})
 }
 
 const (

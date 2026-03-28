@@ -20,7 +20,8 @@ func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
 
 	r.Group(func(site chi.Router) {
-		site.Use(basicAuthHandler("matt", "test"))
+
+		//site.Use(basicAuthHandler("matt", "test"))
 
 		site.HandleFunc("/", indexPageHandler())
 

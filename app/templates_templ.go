@@ -411,7 +411,7 @@ func LogVisitTemplate(vm VisitVM) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, " site</p><form enctype=\"multipart/form-data\" method=\"post\" id=\"visit-form\"><section><input type=\"hidden\" name=\"location_id\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, " site</p><form enctype=\"multipart/form-data\" method=\"post\" id=\"visit-form\" action=\"/visits/log-visit/confirm\"><section><input type=\"hidden\" name=\"location_id\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -470,7 +470,7 @@ func LogVisitTemplate(vm VisitVM) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><div class=\"grid\"><label for=\"visit-duration\">Approx visit duration <input id=\"visit-duration\" name=\"visit_duration\" list=\"durations\" type=\"range\" min=\"1\" max=\"4\" step=\"1\" value=\"2\" style=\"--pico-selected-ratio: 0%;\"> <datalist id=\"durations\"><option value=\"15\">15 min</option> <option value=\"30\">30 min</option> <option value=\"45\">45 min</option> <option value=\"60\">1 hour</option></datalist></label> <label for=\"visit-photos\">Visit images <input class=\"visit-photos\" data-on:change=\"resizePhotos(evt)\" id=\"visit-photos\" name=\"visit_photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></label></div><section id=\"thumbs\"></section><button style=\"width: 100%;\" data-indicator:fetching data-on:click=\"@post('/visits/log-visit/', {contentType: 'form'})\" data-attr:disabled=\"$fetching\">Submit</button><div data-show=\"$fetching\">Loading...</div></section></form></section></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><div class=\"grid\"><label for=\"visit-duration\">Approx visit duration <input id=\"visit-duration\" name=\"visit_duration\" list=\"durations\" type=\"range\" min=\"1\" max=\"4\" step=\"1\" value=\"2\" style=\"--pico-selected-ratio: 0%;\"> <datalist id=\"durations\"><option value=\"15\">15 min</option> <option value=\"30\">30 min</option> <option value=\"45\">45 min</option> <option value=\"60\">1 hour</option></datalist></label> <label for=\"visit-photos\">Visit images <input class=\"visit-photos\" data-on:change=\"resizePhotos(evt)\" id=\"visit-photos\" name=\"visit_photos\" type=\"file\" accept=\"image/*\" capture=\"environment\" multiple></label></div><section id=\"thumbs\"></section><button style=\"width: 100%;\" data-indicator:fetching data-attr:disabled=\"$fetching\">Submit</button><div data-show=\"$fetching\">Loading...</div></section></form></section></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -484,7 +484,7 @@ func LogVisitTemplate(vm VisitVM) templ.Component {
 	})
 }
 
-func VisitDateInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
+func VisitDateInputTemplate(isSubmission bool, hasDateError bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -510,7 +510,7 @@ func VisitDateInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if isInvalid {
+			if hasDateError {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -530,7 +530,7 @@ func VisitDateInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
 	})
 }
 
-func VisitNotesInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
+func VisitNotesInputTemplate(isSubmission bool, hasNoteError bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -556,7 +556,7 @@ func VisitNotesInputTemplate(isSubmission bool, isInvalid bool) templ.Component 
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if isInvalid {
+			if hasNoteError {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -576,7 +576,7 @@ func VisitNotesInputTemplate(isSubmission bool, isInvalid bool) templ.Component 
 	})
 }
 
-func VisitTimeInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
+func VisitTimeInputTemplate(isSubmission bool, hasTimeError bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -602,7 +602,7 @@ func VisitTimeInputTemplate(isSubmission bool, isInvalid bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if isSubmission {
-			if isInvalid {
+			if hasTimeError {
 				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, " aria-invalid=\"true\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err

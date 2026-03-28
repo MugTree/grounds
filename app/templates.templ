@@ -114,7 +114,7 @@ templ LogVisitTemplate(vm VisitVM) {
 				@BackButtonTemplate()
 				<h1>Record the visit</h1>
 				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
-				<form enctype="multipart/form-data" method="post" id="visit-form">
+				<form enctype="multipart/form-data" method="post" id="visit-form" action="/visits/log-visit/confirm">
 					<section>
 						<input type="hidden" name="location_id" value={ vm.LocationId }/>
 						<input type="hidden" name="location_name" value={ vm.LocationName }/>
@@ -143,7 +143,7 @@ templ LogVisitTemplate(vm VisitVM) {
 							</label>
 						</div>
 						<section id="thumbs"></section>
-						<button style="width: 100%;" data-indicator:fetching data-on:click="@post('/visits/log-visit/', {contentType: 'form'})" data-attr:disabled="$fetching">Submit</button>
+						<button style="width: 100%;" data-indicator:fetching data-attr:disabled="$fetching">Submit</button>
 						<div data-show="$fetching">Loading...</div>
 					</section>
 				</form>
@@ -152,7 +152,7 @@ templ LogVisitTemplate(vm VisitVM) {
 	}
 }
 
-templ VisitDateInputTemplate(isSubmission bool, isInvalid bool) {
+templ VisitDateInputTemplate(isSubmission bool, hasDateError bool) {
 	<label for="visit-date" id="visit-date-layout">
 		Visit date
 		<input
@@ -162,7 +162,7 @@ templ VisitDateInputTemplate(isSubmission bool, isInvalid bool) {
 			data-bind="visit_date"
 			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-date`, {filterSignals: {include: '^visit_date$'}})"
 			if isSubmission {
-				if isInvalid {
+				if hasDateError {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"
@@ -172,7 +172,7 @@ templ VisitDateInputTemplate(isSubmission bool, isInvalid bool) {
 	</label>
 }
 
-templ VisitNotesInputTemplate(isSubmission bool, isInvalid bool) {
+templ VisitNotesInputTemplate(isSubmission bool, hasNoteError bool) {
 	<label for="visit-notes" id="visit-notes-layout">
 		Vist notes
 		<textarea
@@ -182,7 +182,7 @@ templ VisitNotesInputTemplate(isSubmission bool, isInvalid bool) {
 			data-bind="visit_notes"
 			data-on:blur__debounce.100ms="@post(`/visits/log-visit/validate-notes`, {filterSignals: {include: '^visit_notes$'}})"
 			if isSubmission {
-				if isInvalid {
+				if hasNoteError {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"
@@ -192,7 +192,7 @@ templ VisitNotesInputTemplate(isSubmission bool, isInvalid bool) {
 	</label>
 }
 
-templ VisitTimeInputTemplate(isSubmission bool, isInvalid bool) {
+templ VisitTimeInputTemplate(isSubmission bool, hasTimeError bool) {
 	<label for="visit-time" id="visit-time-layout">
 		Visit start time
 		<input
@@ -202,7 +202,7 @@ templ VisitTimeInputTemplate(isSubmission bool, isInvalid bool) {
 			data-bind:visit_time
 			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-time`, {filterSignals: {include: '^visit_time$'}})"
 			if isSubmission {
-				if isInvalid {
+				if hasTimeError {
 					aria-invalid="true"
 				} else {
 					aria-invalid="false"

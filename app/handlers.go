@@ -178,11 +178,10 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			return
 		}
 
-		sse := datastar.NewSSE(w, r)
 		vm := validateVisitSubmission(r)
 
 		if vm.HasErrors() {
-			sse.PatchElementTempl(LogVisitTemplate(vm))
+			LogVisitTemplate(vm).Render(r.Context(), w)
 			return
 		}
 
@@ -222,7 +221,7 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			ImagePaths:   imagePaths,
 		}
 
-		sse.PatchElementTempl(ConfirmationTemplate(cvm))
+		ConfirmationTemplate(cvm).Render(r.Context(), w)
 
 	}
 }
@@ -230,26 +229,26 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 func validateVisitDateHandler(w http.ResponseWriter, r *http.Request) {
 	ds := dateSignals{}
 	datastar.ReadSignals(r, &ds)
-	isValid := isValidDate(ds.VisitDate)
+	dateError := hasDateError(ds.VisitDate)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitDateInputTemplate(true, isValid))
+	sse.PatchElementTempl(VisitDateInputTemplate(true, dateError))
 }
 
 func validateVisitTimeHandler(w http.ResponseWriter, r *http.Request) {
 	ts := timeSignals{}
 	datastar.ReadSignals(r, &ts)
 	fmt.Println(ts)
-	isValid := isValidTime(ts.VisitTime)
+	timeError := hasTimeError(ts.VisitTime)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitTimeInputTemplate(true, isValid))
+	sse.PatchElementTempl(VisitTimeInputTemplate(true, timeError))
 }
 
 func validateVisitNotesHandler(w http.ResponseWriter, r *http.Request) {
 	ns := notesSignals{}
 	datastar.ReadSignals(r, &ns)
-	isValid := areValidNotes(ns.VisitNotes)
+	notesError := hasNotesError(ns.VisitNotes)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitNotesInputTemplate(true, isValid))
+	sse.PatchElementTempl(VisitNotesInputTemplate(true, notesError))
 }
 
 func errorHandler(w http.ResponseWriter, r *http.Request, msg string, statusCode ...int) {

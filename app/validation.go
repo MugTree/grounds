@@ -9,24 +9,24 @@ import (
 	"time"
 )
 
-func isValidDate(input string) bool {
+func hasDateError(input string) bool {
 	_, err := time.Parse("2006-01-02", input)
 	if err != nil {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
-func isValidTime(input string) bool {
+func hasTimeError(input string) bool {
 	_, err := time.Parse("15:04", input)
 	if err != nil {
-		return false
+		return true
 	}
-	return true
+	return false
 }
 
-func areValidNotes(_ string) bool {
-	return true
+func hasNotesError(_ string) bool {
+	return false
 }
 
 func validateVisitSubmission(r *http.Request) VisitVM {
@@ -49,11 +49,11 @@ func validateVisitSubmission(r *http.Request) VisitVM {
 	fmt.Println("from form - visit date", "'"+vm.Date+"'")
 	fmt.Println("from form - visit time", "'"+vm.Time+"'")
 
-	if !isValidDate(r.FormValue("visit_date")) {
+	if hasDateError(r.FormValue("visit_date")) {
 		vm.HasDateError = true
 	}
 
-	if !isValidTime(r.FormValue("visit_time")) {
+	if hasTimeError(r.FormValue("visit_time")) {
 		vm.HasTimeError = true
 	}
 

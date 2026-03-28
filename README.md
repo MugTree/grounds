@@ -20,6 +20,14 @@ make start-dev
 goose -dir ./data/seeds -no-versioning up
 ```
 
+```
+Extremely useful shortcuts on Mac ⌨️
+Fold current block: ⌥ ⌘ [
+Unfold current block: ⌥ ⌘ ]
+Fold all: ⌘ K, then ⌘ 0
+Unfold all: ⌘ K, then ⌘ J
+```
+
 # Todo
 
 - Need to look at the way that time is shown on the uploads page

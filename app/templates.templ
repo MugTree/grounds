@@ -2,7 +2,7 @@ package app
 
 import "fmt"
 
-templ Layout() {
+templ LayoutTemplate() {
 	<!DOCTYPE html>
 	<html lang="en">
 		<head>
@@ -37,8 +37,8 @@ templ Layout() {
 	</html>
 }
 
-templ IndexPage() {
-	@Layout() {
+templ IndexPageTemplate() {
+	@LayoutTemplate() {
 		<section>
 			<h1>Demos</h1>
 			<ul>
@@ -48,8 +48,8 @@ templ IndexPage() {
 	}
 }
 
-templ ChooseCustomer(vm PickCustomerVm) {
-	@Layout() {
+templ ChooseCustomerTemplate(vm PickCustomerVm) {
+	@LayoutTemplate() {
 		<section>
 			<h1>Pick a customer</h1>
 			<p>Choose a customer to visit</p>
@@ -73,10 +73,10 @@ templ ChooseCustomer(vm PickCustomerVm) {
 	}
 }
 
-templ ChooseLocation(vm PickLocationVm) {
-	@Layout() {
+templ ChooseLocationTemplate(vm PickLocationVm) {
+	@LayoutTemplate() {
 		<section>
-			@BackButton()
+			@BackButtonTemplate()
 			<h1>Choose a location</h1>
 			<p>Which of { vm.CustomerName } locations are you visiting?</p>
 			<form action="choose-location" method="post">
@@ -103,22 +103,15 @@ templ ChooseLocation(vm PickLocationVm) {
 	}
 }
 
-templ BackButton() {
+templ BackButtonTemplate() {
 	<span style="float: right;"><a href="#" onclick="history.back(); return false;">&lt; Back</a></span>
 }
 
-func setAriaValidity(val bool) string {
-	if val {
-		return "true"
-	}
-	return "false"
-}
-
-templ LogVisit(vm visitVM) {
-	@Layout() {
+templ LogVisitTemplate(vm VisitVM) {
+	@LayoutTemplate() {
 		<div id="log-visit">
 			<section>
-				@BackButton()
+				@BackButtonTemplate()
 				<h1>Record the visit</h1>
 				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
 				<form enctype="multipart/form-data" method="post" id="visit-form">
@@ -127,11 +120,11 @@ templ LogVisit(vm visitVM) {
 						<input type="hidden" name="location_name" value={ vm.LocationName }/>
 						<input type="hidden" name="customer_name" value={ vm.CustomerName }/>
 						<div class="grid">
-							@VisitDateInput(vm.IsSubmission, vm.HasDateError)
-							@VisitTimeInput(vm.IsSubmission, vm.HasTimeError)
+							@VisitDateInputTemplate(vm.IsSubmission, vm.HasDateError)
+							@VisitTimeInputTemplate(vm.IsSubmission, vm.HasTimeError)
 						</div>
 						<div>
-							@VisitNotesInput(vm.IsSubmission, vm.HasNotesError)
+							@VisitNotesInputTemplate(vm.IsSubmission, vm.HasNotesError)
 						</div>
 						<div class="grid">
 							<label for="visit-duration">
@@ -159,7 +152,7 @@ templ LogVisit(vm visitVM) {
 	}
 }
 
-templ VisitDateInput(isSubmission bool, isInvalid bool) {
+templ VisitDateInputTemplate(isSubmission bool, isInvalid bool) {
 	<label for="visit-date" id="visit-date-layout">
 		Visit date
 		<input
@@ -179,7 +172,7 @@ templ VisitDateInput(isSubmission bool, isInvalid bool) {
 	</label>
 }
 
-templ VisitNotesInput(isSubmission bool, isInvalid bool) {
+templ VisitNotesInputTemplate(isSubmission bool, isInvalid bool) {
 	<label for="visit-notes" id="visit-notes-layout">
 		Vist notes
 		<textarea
@@ -199,7 +192,7 @@ templ VisitNotesInput(isSubmission bool, isInvalid bool) {
 	</label>
 }
 
-templ VisitTimeInput(isSubmission bool, isInvalid bool) {
+templ VisitTimeInputTemplate(isSubmission bool, isInvalid bool) {
 	<label for="visit-time" id="visit-time-layout">
 		Visit start time
 		<input
@@ -219,8 +212,8 @@ templ VisitTimeInput(isSubmission bool, isInvalid bool) {
 	</label>
 }
 
-templ Confirmation(vm ConfirmationVm) {
-	@Layout() {
+templ ConfirmationTemplate(vm ConfirmationVm) {
+	@LayoutTemplate() {
 		<div id="log-visit">
 			<section>
 				<h1>Confirmation</h1>
@@ -228,18 +221,21 @@ templ Confirmation(vm ConfirmationVm) {
 				<form action="/visits/log-visit/confirm" method="post">
 					<input type="hidden" name="confirm" value={ vm.VisitId }/>
 					<ul>
+						<li>Location: { vm.LocationName }</li>
+						<li>Customer: { vm.CustomerName }</li>
+						<li>Employee: { vm.EmployeeName }</li>
 						<li>Time: { vm.Time }</li>
 						<li>Date: { vm.Date }</li>
 						<li>Duration: { vm.Duration }</li>
 					</ul>
-					// <section id="thumbs">
-					// 	for _, i := range vm.ImagePaths {
-					// 		<img src={ i }/>
-					// 	}
-					// </section>
+					<section id="thumbs">
+						for _, i := range vm.ImagePaths {
+							<img src={ i }/>
+						}
+					</section>
 					<div class="grid">
 						<button type="submit">Submit</button>
-						{{ backUrl := templ.SafeURL(fmt.Sprintf("/visits/%v/log-visit", vm.LocationId)) }}
+						{{ backUrl := templ.SafeURL(fmt.Sprintf("/visits/%v/log-visit", vm.VisitId)) }}
 						<a role="button" class="secondary" href={ backUrl }>Back</a>
 					</div>
 				</form>
@@ -248,7 +244,7 @@ templ Confirmation(vm ConfirmationVm) {
 	}
 }
 
-templ VisitError() {
+templ VisitErrorTemplate() {
 	<div id="visit">
 		<h2>Hmm, there's been an error</h2>
 		<p>Check the logs...</p>
@@ -256,8 +252,8 @@ templ VisitError() {
 	</div>
 }
 
-templ ErrorPage() {
-	@Layout() {
+templ ErrorPageTemplate() {
+	@LayoutTemplate() {
 		<h1>500 - server error</h1>
 	}
 }

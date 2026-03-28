@@ -3,7 +3,6 @@ package app
 import (
 	"context"
 	"crypto/rand"
-	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"image"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"io"
 	"net/http"
@@ -22,45 +22,18 @@ import (
 	"golang.org/x/image/draw"
 )
 
-type HomepageVm struct {
-	SelectedCustomer int
-	SelectedLocation int
-	ShowLocations    bool
-	Customers        []Customer
-	Locations        []Location
-	IsValid          bool
-}
-
-type PickCustomerVm struct {
-	Customers []Customer
-	HasError  bool
-	//PreviousVisits []
-}
-
-type PickLocationVm struct {
-	CustomerId   int
-	CustomerName string
-	Locations    []Location
-	HasError     bool
-}
-
-type homePageSignals struct {
-	CustomerId int `json:"customerId"`
-	LocationId int `json:"locationId"`
-}
-
 func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int, bool) {
 
 	formVal := r.FormValue(key)
 
 	if formVal == "" {
-		renderServerError(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
+		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
 		return 0, false
 	}
 
 	val, err := strconv.Atoi(formVal)
 	if err != nil {
-		renderServerError(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
 		return 0, false
 	}
 
@@ -73,13 +46,13 @@ func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (in
 	formVal := r.PathValue(key)
 
 	if formVal == "" {
-		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
+		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
 		return 0, false
 	}
 
 	val, err := strconv.Atoi(formVal)
 	if err != nil {
-		renderServerError(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
 		return 0, false
 	}
 
@@ -94,7 +67,7 @@ func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool,
 
 	selectData := func(data any, name string, sql string) bool {
 		if err := db.SelectContext(r.Context(), data, sql); err != nil {
-			renderServerError(w, r, fmt.Sprintf("db: error selecting from table '%s' - %v", name, err))
+			errorHandler(w, r, fmt.Sprintf("db: error selecting from table '%s' - %v", name, err))
 			return false
 		}
 		return true
@@ -138,34 +111,22 @@ func getLocation(ctx context.Context, db *sqlx.DB, locationId, customerId int) (
 	return location, err
 }
 
-func handleLocationError(
-	w http.ResponseWriter,
-	r *http.Request,
-	err error,
-	signals homePageSignals,
-) {
-	if err == sql.ErrNoRows {
-		renderServerError(
-			w,
-			r,
-			fmt.Sprintf(
-				"sql: error selecting location - check inputs - %v - %v",
-				signals.LocationId,
-				signals.CustomerId,
-			),
-		)
-		return
+func parseMultipart(r *http.Request) (*http.Request, error) {
+
+	ct := r.Header.Get("Content-Type")
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			return r, err
+		}
+	} else {
+		err := r.ParseForm()
+		if err != nil {
+			return r, err
+		}
 	}
 
-	renderServerError(
-		w,
-		r,
-		fmt.Sprintf(
-			"http: error selecting location - check inputs - %v - %v",
-			signals.LocationId,
-			signals.CustomerId,
-		),
-	)
+	return r, nil
 }
 
 func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
@@ -195,7 +156,7 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int6
 	}
 
 	if r.MultipartForm != nil {
-		photos := r.MultipartForm.File["original-photos"]
+		photos := r.MultipartForm.File["visit_photos"]
 
 		for _, fh := range photos {
 			file, err := fh.Open()
@@ -357,6 +318,13 @@ func saveToDisk(src io.Reader, relPath, uploadsDir string) error {
 	return nil
 }
 
+func setAriaValidity(val bool) string {
+	if val {
+		return "true"
+	}
+	return "false"
+}
+
 const (
 
 	// --------------------------------------
@@ -379,17 +347,15 @@ const (
 
 	SelectCustomerByIdSql string = `SELECT * FROM customer WHERE id = $1`
 
-	// SelectLocationsByCustomerIdSql = `
-	// 	SELECT
-	// 		l.name AS location_name,
-	// 		c.name AS customer_name,
-	// 		l.id AS location_id
-	// 	FROM location l
-	// 	INNER JOIN customer c
-	// 	ON l.customer_id = c.id
-	// 	WHERE c.id = $1;`
-
 	// --------------------------------------
+
+	SelectVisitDataSql string = `
+			SELECT c.name customer_name, l.name location_name, e.name employee_name
+			FROM visits v
+         		INNER JOIN location l ON v.location_id = l.id
+         		INNER JOIN employee e ON e.id = v.employee_id
+         		INNER JOIN customer c ON c.id = l.customer_id
+			WHERE v.id = $1`
 
 	SelectLocationById string = `
  		SELECT
@@ -404,75 +370,6 @@ const (
 	//----------------------------------
 
 )
-
-type Customer struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-}
-
-type Employee struct {
-	Id   int    `db:"id"`
-	Name string `db:"name"`
-}
-
-type Location struct {
-	Id         int    `db:"id"`
-	Name       string `db:"name"`
-	CustomerId int    `db:"customer_id"`
-}
-
-type Visit struct {
-	Id         int `db:"id"`
-	EmployeeId int `db:"employee_id"`
-	LocationId int `db:"location_id"`
-}
-
-type locationByCustomer struct {
-	LocationName string `db:"location_name"`
-	CustomerName string `db:"customer_name"`
-	CustomerId   string `db:"customer_id"`
-	LocationId   string `db:"location_id"`
-}
-
-type getLocSignals struct {
-	CustomerId string `json:"customerId"`
-}
-
-type visitVM struct {
-	Date         string
-	Time         string
-	Duration     string
-	Notes        string
-	CustomerId   string
-	CustomerName string
-	LocationName string
-	LocationId   string
-	IsComplete   bool
-	IsSubmission bool
-	VisitVMErrors
-}
-
-func (v visitVM) HasErrors() bool {
-	if v.HasDateError || v.HasTimeError {
-		return true
-	}
-	return false
-}
-
-type VisitVMErrors struct {
-	HasTimeError  bool
-	HasDateError  bool
-	HasNotesError bool
-}
-
-type ConfirmationVm struct {
-	LocationId string
-	VisitId    string
-	Time       string
-	Date       string
-	Duration   string
-	ImagePaths []string
-}
 
 func LogInfo(msg string)  { log.Println("INFO: " + msg) }
 func LogError(msg string) { log.Println("ERROR: " + msg) }

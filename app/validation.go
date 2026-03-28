@@ -29,9 +29,9 @@ func areValidNotes(_ string) bool {
 	return true
 }
 
-func validateVisitSubmission(r *http.Request) visitVM {
+func validateVisitSubmission(r *http.Request) VisitVM {
 
-	vm := visitVM{}
+	vm := VisitVM{}
 	/* in a realistic scenario we would validate
 	everything
 	not just date and time

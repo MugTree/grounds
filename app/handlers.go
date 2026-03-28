@@ -1,30 +1,26 @@
 package app
 
 import (
+	"crypto/sha256"
+	"crypto/subtle"
 	"fmt"
 	"net/http"
+	"runtime"
 	"strings"
 	"time"
 
-	"github.com/goforj/godump"
+	// "github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func indexPage() http.HandlerFunc {
+func indexPageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		IndexPage().Render(r.Context(), w)
+		IndexPageTemplate().Render(r.Context(), w)
 	}
 }
 
-type JourneyData struct {
-	CustomerId int
-	LocationId int
-}
-
-const JourneyDataCookieName string = "journeydata"
-
-func chooseCustomer(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomerHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ok, customers, _ := getHomepageData(db, w, r)
@@ -32,11 +28,11 @@ func chooseCustomer(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 		vm := PickCustomerVm{Customers: customers}
-		ChooseCustomer(vm).Render(r.Context(), w)
+		ChooseCustomerTemplate(vm).Render(r.Context(), w)
 	}
 }
 
-func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomerSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -50,7 +46,7 @@ func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
 				return
 			}
 			vm := PickCustomerVm{Customers: customers, HasError: true}
-			ChooseCustomer(vm).Render(r.Context(), w)
+			ChooseCustomerTemplate(vm).Render(r.Context(), w)
 			return
 		}
 
@@ -59,9 +55,7 @@ func chooseCustomerSubmit(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-// ----------------------------------------------------------------------------------
-
-func chooseLocation(db *sqlx.DB) http.HandlerFunc {
+func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := pathValueAsIntOrErr(w, r, "customer_id")
@@ -75,14 +69,14 @@ func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		if customerId == 0 {
-			renderServerError(w, r, "http: tempered request")
+			errorHandler(w, r, "http: tempered request")
 			return
 		}
 
 		var customer Customer
 
 		if err := db.GetContext(r.Context(), &customer, SelectCustomerByIdSql, customerId); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
+			errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 			return
 		}
 
@@ -92,11 +86,11 @@ func chooseLocation(db *sqlx.DB) http.HandlerFunc {
 			CustomerId:   customerId,
 		}
 
-		ChooseLocation(vm).Render(r.Context(), w)
+		ChooseLocationTemplate(vm).Render(r.Context(), w)
 	}
 }
 
-func choosteLocationSubmit(db *sqlx.DB) http.HandlerFunc {
+func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// hidden value
@@ -106,7 +100,7 @@ func choosteLocationSubmit(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		if customerId == 0 {
-			renderServerError(w, r, "http: customer id not being set is 0")
+			errorHandler(w, r, "http: customer id not being set is 0")
 			return
 		}
 
@@ -123,7 +117,7 @@ func choosteLocationSubmit(db *sqlx.DB) http.HandlerFunc {
 
 			vm := PickLocationVm{Locations: filteredLocations(locations, customerId), HasError: true}
 			vm.CustomerId = customerId
-			ChooseLocation(vm).Render(r.Context(), w)
+			ChooseLocationTemplate(vm).Render(r.Context(), w)
 			return
 		}
 
@@ -133,7 +127,7 @@ func choosteLocationSubmit(db *sqlx.DB) http.HandlerFunc {
 
 }
 
-func logVisit(db *sqlx.DB) http.HandlerFunc {
+func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		locationId, ok := pathValueAsIntOrErr(w, r, "location_id")
@@ -142,18 +136,23 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		if locationId == 0 {
-			renderServerError(w, r, "http: location_id is 0 this shouldn't happen")
+			errorHandler(w, r, "http: location_id is 0 this shouldn't happen")
 			return
 		}
 
-		loc := locationByCustomer{}
+		var loc struct {
+			LocationName string `db:"location_name"`
+			CustomerName string `db:"customer_name"`
+			CustomerId   string `db:"customer_id"`
+			LocationId   string `db:"location_id"`
+		}
 
 		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
-			renderServerError(w, r, fmt.Sprintf("sql: error getting location - %v", err))
+			errorHandler(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
 
-		vm := visitVM{
+		vm := VisitVM{
 			Date:          time.Now().Format("2006-01-02"),
 			Duration:      "60",
 			CustomerName:  loc.CustomerName,
@@ -165,118 +164,141 @@ func logVisit(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		LogInfo("starting log a location")
-		LogVisit(vm).Render(r.Context(), w)
+		LogVisitTemplate(vm).Render(r.Context(), w)
 	}
 }
 
-func logVisitSubmit(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
+func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Println("ok")
 		r, err := parseMultipart(r)
 		if err != nil {
-			renderServerError(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
+			errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
 			return
 		}
 
 		sse := datastar.NewSSE(w, r)
 		vm := validateVisitSubmission(r)
 
-		godump.Dump(vm)
 		if vm.HasErrors() {
-			sse.PatchElementTempl(LogVisit(vm))
+			sse.PatchElementTempl(LogVisitTemplate(vm))
 			return
 		}
 
 		visitId, err := logVisitData(db, r, uploadsDir)
 		if err != nil {
-			renderServerError(w, r, err.Error())
+			errorHandler(w, r, err.Error())
+			return
+		}
+		fmt.Println("visit id is: ", visitId)
+
+		var imagePaths = []string{}
+
+		if err := db.SelectContext(r.Context(), &imagePaths, `SELECT filename from images where visit_id = ?;`, visitId); err != nil {
+			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
 			return
 		}
 
-		// var imagePaths = []string{}
+		fmt.Printf("there are %v images", len(imagePaths))
 
-		// db.SelectContext(r.Context(), &imagePaths, `SELECT * from images where visit_id = ?;`, visitId)
+		// we also need times and dates and these are part of a forthcoming migration
+		var visit struct {
+			CustomerName string `db:"customer_name"`
+			LocationName string `db:"location_name"`
+			EmployeeName string `db:"employee_name"`
+		}
 
-		// username
-		// images
-		// visit_date
-		// visit_time
-		// ...
+		if err = db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
+			errorHandler(w, r, fmt.Sprintf("sql: error geting visit data: %v", err))
+			return
+		}
 
-		fmt.Println("visit id is: ", visitId)
+		cvm := ConfirmationVm{
+			VisitId:      visitId,
+			LocationName: visit.LocationName,
+			EmployeeName: visit.EmployeeName,
+			CustomerName: visit.CustomerName,
+			ImagePaths:   imagePaths,
+		}
 
-		LogInfo("logVisitSubmit")
-
-		// data will be in an odd shape but complete
-
-		// simplerSqlDisentangle := `
-		// SELECT
-		// 	*
-		// FROM visits v
-		// INNER JOIN employee e ON e.id = v.employee_id
-		// WHERE v.id = ?;
-		// SELECT* from images where visit_id = ?`
-
-		// fmt.Println(simplerSqlDisentangle)
-
-		cvm := ConfirmationVm{}
-		sse.PatchElementTempl(Confirmation(cvm))
+		sse.PatchElementTempl(ConfirmationTemplate(cvm))
 
 	}
 }
 
-type dateSignals struct {
-	VisitDate string `json:"visit_date"`
-}
-
-func validateVisitDate(w http.ResponseWriter, r *http.Request) {
+func validateVisitDateHandler(w http.ResponseWriter, r *http.Request) {
 	ds := dateSignals{}
 	datastar.ReadSignals(r, &ds)
 	isValid := isValidDate(ds.VisitDate)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitDateInput(true, isValid))
+	sse.PatchElementTempl(VisitDateInputTemplate(true, isValid))
 }
 
-type timeSignals struct {
-	VisitTime string `json:"visit_time"`
-}
-
-func validateVisitTime(w http.ResponseWriter, r *http.Request) {
+func validateVisitTimeHandler(w http.ResponseWriter, r *http.Request) {
 	ts := timeSignals{}
 	datastar.ReadSignals(r, &ts)
 	fmt.Println(ts)
 	isValid := isValidTime(ts.VisitTime)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitTimeInput(true, isValid))
+	sse.PatchElementTempl(VisitTimeInputTemplate(true, isValid))
 }
 
-type notesSignals struct {
-	VisitNotes string `json:"visit_notes"`
-}
-
-func validateVisitNotes(w http.ResponseWriter, r *http.Request) {
+func validateVisitNotesHandler(w http.ResponseWriter, r *http.Request) {
 	ns := notesSignals{}
 	datastar.ReadSignals(r, &ns)
 	isValid := areValidNotes(ns.VisitNotes)
 	sse := datastar.NewSSE(w, r)
-	sse.PatchElementTempl(VisitNotesInput(true, isValid))
+	sse.PatchElementTempl(VisitNotesInputTemplate(true, isValid))
 }
 
-func parseMultipart(r *http.Request) (*http.Request, error) {
-
-	ct := r.Header.Get("Content-Type")
-	if strings.HasPrefix(ct, "multipart/form-data") {
-		err := r.ParseMultipartForm(10 << 20)
-		if err != nil {
-			return r, err
-		}
-	} else {
-		err := r.ParseForm()
-		if err != nil {
-			return r, err
-		}
+func errorHandler(w http.ResponseWriter, r *http.Request, msg string, statusCode ...int) {
+	status := 500
+	if len(statusCode) > 0 {
+		status = statusCode[0]
 	}
 
-	return r, nil
+	_, file, line, ok := runtime.Caller(1) // 1 = caller of this function
+	if ok {
+		msg = fmt.Sprintf("%s (at %s:%d)", msg, file, line)
+	}
+	LogError(msg)
+	w.WriteHeader(status)
+	ErrorPageTemplate().Render(r.Context(), w)
+}
+
+func neuterDirectoryHandler(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			http.NotFound(w, r)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+func basicAuthHandler(user string, user_password string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			username, password, ok := r.BasicAuth()
+			if ok {
+				usernameHash := sha256.Sum256([]byte(username))
+				passwordHash := sha256.Sum256([]byte(password))
+				expectedUsernameHash := sha256.Sum256([]byte(user))
+				expectedPasswordHash := sha256.Sum256([]byte(user_password))
+
+				usernameMatch := subtle.ConstantTimeCompare(usernameHash[:], expectedUsernameHash[:]) == 1
+				passwordMatch := subtle.ConstantTimeCompare(passwordHash[:], expectedPasswordHash[:]) == 1
+
+				if usernameMatch && passwordMatch {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		})
+	}
 }

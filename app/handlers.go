@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -15,7 +16,9 @@ import (
 )
 
 func indexPageHandler() http.HandlerFunc {
+
 	return func(w http.ResponseWriter, r *http.Request) {
+		deleteJourneyCookie(w)
 		IndexPageTemplate().Render(r.Context(), w)
 	}
 }
@@ -128,7 +131,7 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			"location_id": locationId,
 		})
 
-		http.Redirect(w, r, "/visits/log-visit", http.StatusSeeOther)
+		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
 	}
 
 }
@@ -136,11 +139,11 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		journey := readJourneyCookie(r)
+		if journeyIsComplete(w, r) {
+			return
+		}
 
-		fmt.Println(journey)
-
-		locationId := journey["location_id"]
+		locationId := readJourneyCookie(r)["location_id"]
 		if locationId == "" {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
@@ -174,7 +177,6 @@ func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 			VisitVMErrors: VisitVMErrors{HasTimeError: false, HasDateError: false},
 		}
 
-		LogInfo("starting log a location")
 		LogVisitTemplate(vm).Render(r.Context(), w)
 	}
 }
@@ -182,7 +184,10 @@ func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		fmt.Println("ok")
+		if journeyIsComplete(w, r) {
+			return
+		}
+
 		r, err := parseMultipart(r)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
@@ -190,7 +195,6 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 		}
 
 		vm := validateVisitSubmission(r)
-
 		if vm.HasErrors() {
 			LogVisitTemplate(vm).Render(r.Context(), w)
 			return
@@ -201,30 +205,39 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			errorHandler(w, r, err.Error())
 			return
 		}
-		fmt.Println("visit id is: ", visitId)
+
+		updateJourneyCookie(w, r, map[string]string{
+			"visit_id":         strconv.Itoa(int(visitId)),
+			"journey_complete": "true",
+		})
+
+		http.Redirect(w, r, "/visits/log-visit/complete", http.StatusSeeOther)
+	}
+}
+
+func visitCompleteHandler(db *sqlx.DB) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		visitId := readJourneyCookie(r)["visit_id"]
 
 		var imagePaths = []string{}
-
 		if err := db.SelectContext(r.Context(), &imagePaths, `SELECT filename from images where visit_id = ?;`, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
 			return
 		}
 
-		fmt.Printf("there are %v images", len(imagePaths))
-
-		// we also need times and dates and these are part of a forthcoming migration
 		var visit struct {
 			CustomerName string `db:"customer_name"`
 			LocationName string `db:"location_name"`
 			EmployeeName string `db:"employee_name"`
 		}
 
-		if err = db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
+		if err := db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error geting visit data: %v", err))
 			return
 		}
 
-		cvm := ConfirmationVm{
+		cvm := VisitCompleteVm{
 			VisitId:      visitId,
 			LocationName: visit.LocationName,
 			EmployeeName: visit.EmployeeName,
@@ -232,7 +245,7 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			ImagePaths:   imagePaths,
 		}
 
-		ConfirmationTemplate(cvm).Render(r.Context(), w)
+		VisitCompleteTemplate(cvm).Render(r.Context(), w)
 
 	}
 }
@@ -248,7 +261,6 @@ func validateVisitDateHandler(w http.ResponseWriter, r *http.Request) {
 func validateVisitTimeHandler(w http.ResponseWriter, r *http.Request) {
 	ts := timeSignals{}
 	datastar.ReadSignals(r, &ts)
-	fmt.Println(ts)
 	timeError := hasTimeError(ts.VisitTime)
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(VisitTimeInputTemplate(true, timeError))

@@ -39,3 +39,15 @@ datalist#durations {
 .thumb-holder {
   border: 1px solid var(--pico-form-element-border-color);
 }
+
+#confirm {
+  display: none;
+}
+
+#confirm:target {
+  display: block;
+}
+
+#confirm:target ~ #input {
+  display: none;
+}

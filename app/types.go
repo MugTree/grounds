@@ -5,11 +5,11 @@ type Customer struct {
 	Name string `db:"name"`
 }
 
-type ConfirmationVm struct {
+type VisitCompleteVm struct {
 	LocationName string
 	CustomerName string
 	EmployeeName string
-	VisitId      int64
+	VisitId      string
 	Time         string
 	Date         string
 	Duration     string

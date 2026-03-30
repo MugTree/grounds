@@ -11,6 +11,7 @@ import (
 	"time"
 
 	// "github.com/goforj/godump"
+	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -35,7 +36,7 @@ func chooseCustomerHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseCustomerSubmitHandler(db *sqlx.DB) http.HandlerFunc {
+func chooseCustomerSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -52,17 +53,21 @@ func chooseCustomerSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			ChooseCustomerTemplate(vm).Render(r.Context(), w)
 			return
 		}
-		updateJourneyCookie(w, r, map[string]string{
-			"customer_id": customerId,
-		})
+
+		updateJourneyCookie(w, r, cookieKey, map[string]string{"customer_id": customerId})
+
 		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
 	}
 }
 
-func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
+func chooseLocationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		journey := readJourneyCookie(r)
+		journey, err := readJourneyCookie(r, cookieKey)
+		godump.Dump(journey)
+		if err != nil {
+			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
+		}
 
 		customerId := journey["customer_id"]
 		if customerId == "" {
@@ -96,7 +101,7 @@ func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
+func chooseLocationSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -126,7 +131,7 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 			return
 		}
 
-		updateJourneyCookie(w, r, map[string]string{
+		updateJourneyCookie(w, r, cookieKey, map[string]string{
 			"location_id": locationId,
 		})
 
@@ -134,15 +139,22 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
+func logVisitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if journeyComplete(r) {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
+		// if _, err :=  journeyComplete(r, cookieKey); err != nil {
+		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
+		// 	return
+		// }
+
+		journey, err := readJourneyCookie(r, cookieKey)
+		godump.Dump(journey)
+		if err != nil {
+			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
 		}
 
-		locationId := readJourneyCookie(r)["location_id"]
+		locationId := journey["location_id"]
+
 		if locationId == "" {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
@@ -180,13 +192,13 @@ func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
+func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if journeyComplete(r) {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
+		// if journeyComplete(r) {
+		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
+		// 	return
+		// }
 
 		r, err := parseMultipart(r)
 		if err != nil {
@@ -206,7 +218,7 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			return
 		}
 
-		updateJourneyCookie(w, r, map[string]string{
+		updateJourneyCookie(w, r, cookieKey, map[string]string{
 			"visit_id":         strconv.Itoa(int(visitId)),
 			"journey_complete": "true",
 		})
@@ -214,16 +226,23 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	}
 }
 
-func visitCompleteHandler(db *sqlx.DB) http.HandlerFunc {
+func visitCompleteHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if !journeyComplete(r) {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
+		// if !journeyComplete(r) {
+		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
+		// 	return
+		// }
 
 		var imagePaths = []string{}
-		visitId := readJourneyCookie(r)["visit_id"]
+		journey, err := readJourneyCookie(r, cookieKey)
+		godump.Dump(journey)
+		if err != nil {
+			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
+		}
+
+		visitId := journey["visit_id"]
+
 		if err := db.SelectContext(r.Context(), &imagePaths,
 			`SELECT filename from images where visit_id = ?;`, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))

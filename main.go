@@ -47,6 +47,7 @@ func run(parent context.Context) error {
 	dbPath := mustEnv("VT_APP_DB")
 	appPort := mustEnv("VT_APP_PORT")
 	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
+	cookieKey := mustEnv("VT_COOKIE_KEY")
 
 	db, err := sqlx.Open("sqlite3", dbPath)
 	if err != nil {
@@ -60,7 +61,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.ServerSetup(db, uploadsDir)
+			return app.ServerSetup(db, uploadsDir, []byte(cookieKey))
 		}
 	}
 

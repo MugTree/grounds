@@ -14,7 +14,7 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
+func ServerSetup(db *sqlx.DB, uploadsDir string, cookieKey []byte) chi.Router {
 
 	r := chi.NewRouter()
 	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
@@ -27,13 +27,13 @@ func ServerSetup(db *sqlx.DB, uploadsDir string) chi.Router {
 
 		site.Route("/visits", func(r chi.Router) {
 			r.Get("/choose-customer", chooseCustomerHandler(db))
-			r.Post("/choose-customer", chooseCustomerSubmitHandler(db))
-			r.Get("/choose-location", chooseLocationHandler(db))
-			r.Post("/choose-location", chooseLocationSubmitHandler(db))
+			r.Post("/choose-customer", chooseCustomerSubmitHandler(db, cookieKey))
+			r.Get("/choose-location", chooseLocationHandler(db, cookieKey))
+			r.Post("/choose-location", chooseLocationSubmitHandler(db, cookieKey))
 			r.Route("/log-visit", func(r chi.Router) {
-				r.Get("/", logVisitHandler(db))
-				r.Post("/", logVisitSubmitHandler(db, uploadsDir))
-				r.Get("/complete", visitCompleteHandler(db))
+				r.Get("/", logVisitHandler(db, cookieKey))
+				r.Post("/", logVisitSubmitHandler(db, uploadsDir, cookieKey))
+				r.Get("/complete", visitCompleteHandler(db, cookieKey))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)
 				r.Post("/validate-time", validateVisitTimeHandler)

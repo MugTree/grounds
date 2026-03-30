@@ -16,24 +16,11 @@ import (
 
 	"io"
 	"net/http"
-	"net/url"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/image/draw"
 )
-
-func deleteJourneyCookie(w http.ResponseWriter) {
-	LogInfo("cookie: deleting the journey cookie")
-	c := &http.Cookie{
-		Name:     JourneyCookieName,
-		Value:    "",
-		Path:     "/",
-		MaxAge:   -1,
-		HttpOnly: true,
-	}
-	http.SetCookie(w, c)
-}
 
 func filteredLocations(locations []Location, customerId string) []Location {
 	filtered := make([]Location, 0, len(locations))
@@ -116,16 +103,6 @@ func getLocation(ctx context.Context, db *sqlx.DB, locationId, customerId int) (
 	)
 
 	return location, err
-}
-
-func journeyComplete(r *http.Request) bool {
-	_, complete := readJourneyCookie(r)["journey_complete"]
-	if complete {
-		LogInfo("Journey is complete!!!")
-		return true
-	}
-	LogInfo("Journey NOT complete!!!")
-	return false
 }
 
 func LogInfo(msg string) { log.Println("INFO: " + msg) }
@@ -256,20 +233,6 @@ func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (st
 
 }
 
-// readJourneyCookie reads the cookie into a map
-func readJourneyCookie(r *http.Request) map[string]string {
-	values := make(map[string]string)
-	if c, err := r.Cookie(JourneyCookieName); err == nil {
-		parsed, _ := url.ParseQuery(c.Value)
-		for k, v := range parsed {
-			if len(v) > 0 {
-				values[k] = v[0]
-			}
-		}
-	}
-	return values
-}
-
 func saveThumbnail(src io.Reader, relPath, uploadsDir string) error {
 	img, _, err := image.Decode(src)
 	if err != nil {
@@ -366,37 +329,7 @@ func setAriaValidity(val bool) string {
 	return "false"
 }
 
-func updateJourneyCookie(w http.ResponseWriter, r *http.Request, updates map[string]string) {
-	values := url.Values{}
-
-	if c, err := r.Cookie(JourneyCookieName); err == nil {
-		existing, _ := url.ParseQuery(c.Value)
-		for k, v := range existing {
-			if len(v) > 0 {
-				values[k] = v
-			}
-		}
-	}
-
-	for k, v := range updates {
-		if v != "" {
-			values.Set(k, v)
-		}
-	}
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     JourneyCookieName,
-		Value:    values.Encode(),
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   true,
-		Expires:  time.Now().Add(24 * time.Hour),
-		SameSite: http.SameSiteLaxMode,
-	})
-}
-
 const (
-	JourneyCookieName string = "visit_journey"
 
 	// --------------------------------------
 

@@ -4,41 +4,19 @@ import (
 	"net/http"
 	"net/url"
 	"time"
-
-	"github.com/goforj/godump"
 )
 
 const JourneyCookieName string = "visit_journey"
 
 func deleteJourneyCookie(w http.ResponseWriter) {
-	LogInfo("cookie: deleting the journey cookie")
-	c := &http.Cookie{
+	http.SetCookie(w, &http.Cookie{
 		Name:     JourneyCookieName,
 		Value:    "",
 		Path:     "/",
 		MaxAge:   -1,
 		HttpOnly: true,
-	}
-	http.SetCookie(w, c)
-}
-
-func journeyComplete(r *http.Request, secretKey []byte) (bool, error) {
-	journey, err := readJourneyCookie(r, secretKey)
-
-	godump.Dump(journey)
-
-	if err != nil {
-		return false, err
-	}
-
-	complete := journey["journey_complete"]
-
-	if complete == "true" {
-		LogInfo("Journey is complete!!!")
-		return true, nil
-	}
-	LogInfo("Journey NOT complete!!!")
-	return false, nil
+	})
+	LogInfo("cookie: deleting the journey cookie")
 }
 
 func updateJourneyCookie(w http.ResponseWriter, r *http.Request, secretKey []byte, updates map[string]string) error {
@@ -46,7 +24,7 @@ func updateJourneyCookie(w http.ResponseWriter, r *http.Request, secretKey []byt
 	values := url.Values{}
 	if _, err := r.Cookie(JourneyCookieName); err == nil {
 
-		cookieVal, err := ReadSigned(r, JourneyCookieName, secretKey)
+		cookieVal, err := readSignedCookie(r, JourneyCookieName, secretKey)
 		if err != nil {
 			return err
 		}
@@ -75,14 +53,14 @@ func updateJourneyCookie(w http.ResponseWriter, r *http.Request, secretKey []byt
 		SameSite: http.SameSiteLaxMode,
 	}
 
-	return WriteSigned(w, cookie, secretKey)
+	return writeSignedCookie(w, cookie, secretKey)
 
 }
 
 func readJourneyCookie(r *http.Request, secretKey []byte) (map[string]string, error) {
 	values := make(map[string]string)
 
-	cookieVal, err := ReadSigned(r, JourneyCookieName, secretKey)
+	cookieVal, err := readSignedCookie(r, JourneyCookieName, secretKey)
 	if err != nil {
 		return nil, err
 	}

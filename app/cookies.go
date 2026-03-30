@@ -13,7 +13,7 @@ var (
 	ErrInvalidValue = errors.New("invalid cookie value")
 )
 
-func Write(w http.ResponseWriter, cookie http.Cookie) error {
+func writeCookie(w http.ResponseWriter, cookie http.Cookie) error {
 	// Encode the cookie value using base64.
 	cookie.Value = base64.URLEncoding.EncodeToString([]byte(cookie.Value))
 
@@ -29,7 +29,7 @@ func Write(w http.ResponseWriter, cookie http.Cookie) error {
 	return nil
 }
 
-func Read(r *http.Request, name string) (string, error) {
+func readCookie(r *http.Request, name string) (string, error) {
 	// Read the cookie as normal.
 	cookie, err := r.Cookie(name)
 	if err != nil {
@@ -48,7 +48,7 @@ func Read(r *http.Request, name string) (string, error) {
 	return string(value), nil
 }
 
-func WriteSigned(w http.ResponseWriter, cookie http.Cookie, secretKey []byte) error {
+func writeSignedCookie(w http.ResponseWriter, cookie http.Cookie, secretKey []byte) error {
 	// Calculate a HMAC signature of the cookie name and value, using SHA256 and
 	// a secret key (which we will create in a moment).
 	mac := hmac.New(sha256.New, secretKey)
@@ -61,13 +61,13 @@ func WriteSigned(w http.ResponseWriter, cookie http.Cookie, secretKey []byte) er
 
 	// Call our Write() helper to base64-encode the new cookie value and write
 	// the cookie.
-	return Write(w, cookie)
+	return writeCookie(w, cookie)
 }
 
-func ReadSigned(r *http.Request, name string, secretKey []byte) (string, error) {
+func readSignedCookie(r *http.Request, name string, secretKey []byte) (string, error) {
 	// Read in the signed value from the cookie. This should be in the format
 	// "{signature}{original value}".
-	signedValue, err := Read(r, name)
+	signedValue, err := readCookie(r, name)
 	if err != nil {
 		return "", err
 	}

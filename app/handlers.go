@@ -11,7 +11,7 @@ import (
 	"time"
 
 	// "github.com/goforj/godump"
-	"github.com/goforj/godump"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
@@ -20,6 +20,7 @@ func indexPageHandler() http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		deleteJourneyCookie(w)
+
 		IndexPageTemplate().Render(r.Context(), w)
 	}
 }
@@ -64,7 +65,6 @@ func chooseLocationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		journey, err := readJourneyCookie(r, cookieKey)
-		godump.Dump(journey)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
 		}
@@ -142,19 +142,19 @@ func chooseLocationSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc
 func logVisitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// if _, err :=  journeyComplete(r, cookieKey); err != nil {
-		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
-		// 	return
-		// }
-
 		journey, err := readJourneyCookie(r, cookieKey)
-		godump.Dump(journey)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
 		}
 
-		locationId := journey["location_id"]
+		// stop users going back to the form after submitting
+		// ---------------------------------------------
+		if journey["journey_complete"] == "true" {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 
+		locationId := journey["location_id"]
 		if locationId == "" {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
@@ -195,12 +195,15 @@ func logVisitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// if journeyComplete(r) {
-		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
-		// 	return
-		// }
+		// stop users going back to the form after submitting
+		// ---------------------------------------------
+		journey, err := readJourneyCookie(r, cookieKey)
+		if journey["journey_complete"] == "true" {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 
-		r, err := parseMultipart(r)
+		r, err = parseMultipart(r)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
 			return
@@ -229,20 +232,18 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) htt
 func visitCompleteHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// if !journeyComplete(r) {
-		// 	http.Redirect(w, r, "/", http.StatusSeeOther)
-		// 	return
-		// }
+		journey, err := readJourneyCookie(r, cookieKey)
+		if journey["journey_complete"] == "" {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 
 		var imagePaths = []string{}
-		journey, err := readJourneyCookie(r, cookieKey)
-		godump.Dump(journey)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
 		}
 
 		visitId := journey["visit_id"]
-
 		if err := db.SelectContext(r.Context(), &imagePaths,
 			`SELECT filename from images where visit_id = ?;`, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))

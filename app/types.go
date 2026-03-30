@@ -16,36 +16,19 @@ type VisitCompleteVm struct {
 	ImagePaths   []string
 }
 
-type dateSignals struct {
-	VisitDate string `json:"visit_date"`
-}
+// type HomepageVm struct {
+// 	SelectedCustomer int
+// 	SelectedLocation int
+// 	ShowLocations    bool
+// 	Customers        []Customer
+// 	Locations        []Location
+// 	IsValid          bool
+// }
 
-type getLocSignals struct {
-	CustomerId string `json:"customerId"`
-}
-
-type homePageSignals struct {
-	CustomerId int `json:"customerId"`
-	LocationId int `json:"locationId"`
-}
-
-type HomepageVm struct {
-	SelectedCustomer int
-	SelectedLocation int
-	ShowLocations    bool
-	Customers        []Customer
-	Locations        []Location
-	IsValid          bool
-}
-
-type notesSignals struct {
-	VisitNotes string `json:"visit_notes"`
-}
-
-type Journey struct {
-	CustomerID string `json:"customerId,omitempty"`
-	LocationID string `json:"locationId,omitempty"`
-}
+// type Journey struct {
+// 	CustomerID string `json:"customerId,omitempty"`
+// 	LocationID string `json:"locationId,omitempty"`
+// }
 
 type Location struct {
 	Id         string `db:"id"`
@@ -64,10 +47,6 @@ type PickLocationVm struct {
 	CustomerName string
 	Locations    []Location
 	HasError     bool
-}
-
-type timeSignals struct {
-	VisitTime string `json:"visit_time"`
 }
 
 type VisitVM struct {

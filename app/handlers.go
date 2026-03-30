@@ -81,7 +81,6 @@ func chooseLocationHandler(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		var customer Customer
-
 		if err := db.GetContext(r.Context(), &customer, SelectCustomerByIdSql, customerId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 			return
@@ -133,13 +132,13 @@ func chooseLocationSubmitHandler(db *sqlx.DB) http.HandlerFunc {
 
 		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
 	}
-
 }
 
 func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if journeyIsComplete(w, r) {
+		if journeyComplete(r) {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
@@ -184,7 +183,8 @@ func logVisitHandler(db *sqlx.DB) http.HandlerFunc {
 func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if journeyIsComplete(w, r) {
+		if journeyComplete(r) {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
@@ -210,7 +210,6 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 			"visit_id":         strconv.Itoa(int(visitId)),
 			"journey_complete": "true",
 		})
-
 		http.Redirect(w, r, "/visits/log-visit/complete", http.StatusSeeOther)
 	}
 }
@@ -218,10 +217,15 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string) http.HandlerFunc {
 func visitCompleteHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		visitId := readJourneyCookie(r)["visit_id"]
+		if !journeyComplete(r) {
+			http.Redirect(w, r, "/", http.StatusSeeOther)
+			return
+		}
 
 		var imagePaths = []string{}
-		if err := db.SelectContext(r.Context(), &imagePaths, `SELECT filename from images where visit_id = ?;`, visitId); err != nil {
+		visitId := readJourneyCookie(r)["visit_id"]
+		if err := db.SelectContext(r.Context(), &imagePaths,
+			`SELECT filename from images where visit_id = ?;`, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
 			return
 		}
@@ -246,8 +250,11 @@ func visitCompleteHandler(db *sqlx.DB) http.HandlerFunc {
 		}
 
 		VisitCompleteTemplate(cvm).Render(r.Context(), w)
-
 	}
+}
+
+type dateSignals struct {
+	VisitDate string `json:"visit_date"`
 }
 
 func validateVisitDateHandler(w http.ResponseWriter, r *http.Request) {
@@ -258,12 +265,20 @@ func validateVisitDateHandler(w http.ResponseWriter, r *http.Request) {
 	sse.PatchElementTempl(VisitDateInputTemplate(true, dateError))
 }
 
+type timeSignals struct {
+	VisitTime string `json:"visit_time"`
+}
+
 func validateVisitTimeHandler(w http.ResponseWriter, r *http.Request) {
 	ts := timeSignals{}
 	datastar.ReadSignals(r, &ts)
 	timeError := hasTimeError(ts.VisitTime)
 	sse := datastar.NewSSE(w, r)
 	sse.PatchElementTempl(VisitTimeInputTemplate(true, timeError))
+}
+
+type notesSignals struct {
+	VisitNotes string `json:"visit_notes"`
 }
 
 func validateVisitNotesHandler(w http.ResponseWriter, r *http.Request) {

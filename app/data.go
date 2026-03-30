@@ -118,13 +118,13 @@ func getLocation(ctx context.Context, db *sqlx.DB, locationId, customerId int) (
 	return location, err
 }
 
-func journeyIsComplete(w http.ResponseWriter, r *http.Request) bool {
+func journeyComplete(r *http.Request) bool {
 	_, complete := readJourneyCookie(r)["journey_complete"]
 	if complete {
 		LogInfo("Journey is complete!!!")
-		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return true
 	}
+	LogInfo("Journey NOT complete!!!")
 	return false
 }
 

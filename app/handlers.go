@@ -59,13 +59,6 @@ func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	}
 }
 
-type PickLocationVm struct {
-	CustomerId   string
-	CustomerName string
-	Locations    []Location
-	HasError     bool
-}
-
 func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 

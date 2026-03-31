@@ -26,14 +26,14 @@ func ServerSetup(db *sqlx.DB, uploadsDir string, cookieKey []byte) chi.Router {
 		site.HandleFunc("/", indexPageHandler())
 
 		site.Route("/visits", func(r chi.Router) {
-			r.Get("/choose-customer", chooseCustomerHandler(db))
-			r.Post("/choose-customer", chooseCustomerSubmitHandler(db, cookieKey))
-			r.Get("/choose-location", chooseLocationHandler(db, cookieKey))
-			r.Post("/choose-location", chooseLocationSubmitHandler(db, cookieKey))
+			r.Get("/choose-customer", stepOneHandler(db))
+			r.Post("/choose-customer", stepOneSubmitHandler(db, cookieKey))
+			r.Get("/choose-location", stepTwoHandler(db, cookieKey))
+			r.Post("/choose-location", stepTwoSubmitHandler(db, cookieKey))
 			r.Route("/log-visit", func(r chi.Router) {
-				r.Get("/", logVisitHandler(db, cookieKey))
-				r.Post("/", logVisitSubmitHandler(db, uploadsDir, cookieKey))
-				r.Get("/complete", visitCompleteHandler(db, cookieKey))
+				r.Get("/", stepThreeHandler(db, cookieKey))
+				r.Post("/", stepThreeSubmitHandler(db, uploadsDir, cookieKey))
+				r.Get("/complete", confirmationHandler(db, cookieKey))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)
 				r.Post("/validate-time", validateVisitTimeHandler)

@@ -25,7 +25,7 @@ func indexPageHandler() http.HandlerFunc {
 	}
 }
 
-func chooseCustomerHandler(db *sqlx.DB) http.HandlerFunc {
+func stepOneHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ok, customers, _ := getHomepageData(db, w, r)
@@ -37,7 +37,7 @@ func chooseCustomerHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func chooseCustomerSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -61,7 +61,7 @@ func chooseCustomerSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc
 	}
 }
 
-func chooseLocationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		journey, err := readJourneyCookie(r, cookieKey)
@@ -101,7 +101,7 @@ func chooseLocationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	}
 }
 
-func chooseLocationSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepTwoSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -139,7 +139,7 @@ func chooseLocationSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc
 	}
 }
 
-func logVisitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepThreeHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		journey, err := readJourneyCookie(r, cookieKey)
@@ -192,7 +192,7 @@ func logVisitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	}
 }
 
-func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) http.HandlerFunc {
+func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// stop users going back to the form after submitting
@@ -209,7 +209,7 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) htt
 			return
 		}
 
-		vm := validateVisitSubmission(r)
+		vm := validateVisit(r)
 		if vm.HasErrors() {
 			LogVisitTemplate(vm).Render(r.Context(), w)
 			return
@@ -229,9 +229,10 @@ func logVisitSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) htt
 	}
 }
 
-func visitCompleteHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func confirmationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
+		// dont want this page hit directly
 		journey, err := readJourneyCookie(r, cookieKey)
 		if journey["journey_complete"] == "" {
 			http.Redirect(w, r, "/", http.StatusSeeOther)

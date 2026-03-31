@@ -2,7 +2,6 @@ package app
 
 import (
 	"errors"
-	"fmt"
 	"image"
 	"io"
 	"net/http"
@@ -29,7 +28,7 @@ func hasNotesError(_ string) bool {
 	return false
 }
 
-func validateVisitSubmission(r *http.Request) VisitVM {
+func validateVisit(r *http.Request) VisitVM {
 
 	vm := VisitVM{}
 	/* in a realistic scenario we would validate
@@ -45,9 +44,6 @@ func validateVisitSubmission(r *http.Request) VisitVM {
 	vm.Time = r.FormValue("visit_date")
 	vm.Duration = r.FormValue("visit_duration")
 	vm.IsSubmission = true
-
-	fmt.Println("from form - visit date", "'"+vm.Date+"'")
-	fmt.Println("from form - visit time", "'"+vm.Time+"'")
 
 	if hasDateError(r.FormValue("visit_date")) {
 		vm.HasDateError = true

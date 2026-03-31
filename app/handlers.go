@@ -32,8 +32,7 @@ func stepOneHandler(db *sqlx.DB) http.HandlerFunc {
 		if !ok {
 			return
 		}
-		vm := PickCustomerVm{Customers: customers}
-		ChooseCustomerTemplate(vm).Render(r.Context(), w)
+		ChooseCustomerTemplate(customers).Render(r.Context(), w)
 	}
 }
 
@@ -50,8 +49,7 @@ func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 			if !ok {
 				return
 			}
-			vm := PickCustomerVm{Customers: customers, HasError: true}
-			ChooseCustomerTemplate(vm).Render(r.Context(), w)
+			ChooseCustomerTemplate(customers).Render(r.Context(), w)
 			return
 		}
 
@@ -59,6 +57,13 @@ func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 
 		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
 	}
+}
+
+type PickLocationVm struct {
+	CustomerId   string
+	CustomerName string
+	Locations    []Location
+	HasError     bool
 }
 
 func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
@@ -91,17 +96,11 @@ func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 			return
 		}
 
-		vm := PickLocationVm{
-			CustomerName: customer.Name,
-			Locations:    filteredLocations(locations, customerId),
-			CustomerId:   customerId,
-		}
-
-		ChooseLocationTemplate(vm).Render(r.Context(), w)
+		ChooseLocationTemplate(filteredLocations(locations, customerId), customerId, customer.Name).Render(r.Context(), w)
 	}
 }
 
-func stepTwoSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepTwoSubmitHandler(_ *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -119,24 +118,39 @@ func stepTwoSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 			return
 		}
 
-		if locationId == "0" {
-			ok, _, locations := getHomepageData(db, w, r)
-			if !ok {
-				return
-			}
-
-			vm := PickLocationVm{Locations: filteredLocations(locations, customerId), HasError: true}
-			vm.CustomerId = customerId
-			ChooseLocationTemplate(vm).Render(r.Context(), w)
-			return
-		}
-
 		updateJourneyCookie(w, r, cookieKey, map[string]string{
 			"location_id": locationId,
 		})
 
 		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
 	}
+}
+
+type VisitVM struct {
+	Date         string
+	Time         string
+	Duration     string
+	Notes        string
+	CustomerId   string
+	CustomerName string
+	LocationName string
+	LocationId   string
+	IsComplete   bool
+	IsSubmission bool
+	VisitVMErrors
+}
+
+func (v VisitVM) HasErrors() bool {
+	if v.HasDateError || v.HasTimeError {
+		return true
+	}
+	return false
+}
+
+type VisitVMErrors struct {
+	HasTimeError  bool
+	HasDateError  bool
+	HasNotesError bool
 }
 
 func stepThreeHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
@@ -227,6 +241,17 @@ func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) ht
 		})
 		http.Redirect(w, r, "/visits/log-visit/complete", http.StatusSeeOther)
 	}
+}
+
+type VisitCompleteVm struct {
+	LocationName string
+	CustomerName string
+	EmployeeName string
+	VisitId      string
+	Time         string
+	Date         string
+	Duration     string
+	ImagePaths   []string
 }
 
 func confirmationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {

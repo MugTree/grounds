@@ -46,7 +46,7 @@ templ IndexPageTemplate() {
 	}
 }
 
-templ ChooseCustomerTemplate(vm PickCustomerVm) {
+templ ChooseCustomerTemplate(customers []Customer) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Pick a customer</h1>
@@ -58,7 +58,7 @@ templ ChooseCustomerTemplate(vm PickCustomerVm) {
 					required
 				>
 					<option selected disabled value="">Customers...</option>
-					for _, c := range vm.Customers {
+					for _, c := range customers {
 						<option value={ c.Id }>{ c.Name }</option>
 					}
 				</select>
@@ -71,16 +71,16 @@ templ ChooseCustomerTemplate(vm PickCustomerVm) {
 	}
 }
 
-templ ChooseLocationTemplate(vm PickLocationVm) {
+templ ChooseLocationTemplate(locations []Location, customerId string, customerName string) {
 	@LayoutTemplate() {
 		<section>
 			@BackButtonTemplate()
 			<h1>Choose a location</h1>
-			<p>Which of { vm.CustomerName } locations are you visiting?</p>
+			<p>Which of { customerName } locations are you visiting?</p>
 			<form action="choose-location" method="post">
-				if len(vm.Locations) != 0 {
-					if vm.CustomerId != "0" {
-						<input type="hidden" name="customer_id" value={ vm.CustomerId }/>
+				if len(locations) != 0 {
+					if customerId != "0" {
+						<input type="hidden" name="customer_id" value={ customerId }/>
 					}
 					<select
 						id="location-sel"
@@ -88,7 +88,7 @@ templ ChooseLocationTemplate(vm PickLocationVm) {
 						required
 					>
 						<option selected disabled value="">Locations...</option>
-						for _, l := range vm.Locations {
+						for _, l := range locations {
 							<option value={ l.Id }>{  } { l.Name }</option>
 						}
 					</select>

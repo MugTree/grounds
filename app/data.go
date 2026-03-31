@@ -64,6 +64,17 @@ func generatePath(ext string) (string, error) {
 	return fmt.Sprintf("%s/%s%s", date, hex.EncodeToString(b), ext), nil
 }
 
+type Customer struct {
+	Id   int    `db:"id"`
+	Name string `db:"name"`
+}
+
+type Location struct {
+	Id         string `db:"id"`
+	Name       string `db:"name"`
+	CustomerId string `db:"customer_id"`
+}
+
 func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []Customer, []Location) {
 
 	var customers []Customer

@@ -48,7 +48,6 @@ func run(parent context.Context) error {
 	dbPath := mustEnv("VT_APP_DB")
 	appPort := mustEnv("VT_APP_PORT")
 	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
-	//cookieKey := mustEnv("VT_COOKIE_KEY")
 
 	sessionManager := scs.New()
 	sessionManager.Lifetime = 24 * time.Hour

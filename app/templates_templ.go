@@ -92,7 +92,7 @@ func IndexPageTemplate() templ.Component {
 	})
 }
 
-func ChooseCustomerTemplate(customers []Customer) templ.Component {
+func ChooseCustomerTemplate(customers []customer) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -175,7 +175,7 @@ func ChooseCustomerTemplate(customers []Customer) templ.Component {
 	})
 }
 
-func ChooseLocationTemplate(locations []Location, customerId string, customerName string) templ.Component {
+func ChooseLocationTemplate(locations []location, customerId string, customerName string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {

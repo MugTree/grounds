@@ -46,7 +46,7 @@ templ IndexPageTemplate() {
 	}
 }
 
-templ ChooseCustomerTemplate(customers []Customer) {
+templ ChooseCustomerTemplate(customers []customer) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Pick a customer</h1>
@@ -71,7 +71,7 @@ templ ChooseCustomerTemplate(customers []Customer) {
 	}
 }
 
-templ ChooseLocationTemplate(locations []Location, customerId string, customerName string) {
+templ ChooseLocationTemplate(locations []location, customerId string, customerName string) {
 	@LayoutTemplate() {
 		<section>
 			@BackButtonTemplate()

@@ -25,7 +25,7 @@ func indexPageHandler(sessionManager *scs.SessionManager) http.HandlerFunc {
 	}
 }
 
-func stepOneHandler(db *sqlx.DB) http.HandlerFunc {
+func visitStepOneHandler(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		ok, customers, _ := getHomepageData(db, w, r)
@@ -36,7 +36,7 @@ func stepOneHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func stepOneSubmitHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
+func visitStepOneSubmitHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -53,15 +53,15 @@ func stepOneSubmitHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.
 			return
 		}
 
-		sessionManager.Put(r.Context(), "customer_id", customerId)
+		session.Put(r.Context(), "customer_id", customerId)
 		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
 	}
 }
 
-func stepTwoHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
+func visitStepTwoHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		customerId := sessionManager.GetString(r.Context(), "customer_id")
+		customerId := session.GetString(r.Context(), "customer_id")
 		if customerId == "" {
 			errorHandler(w, r, "http: error reading customer_id from cookie path")
 			return
@@ -77,17 +77,27 @@ func stepTwoHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.Handle
 			return
 		}
 
-		var customer Customer
+		var customer customer
 		if err := db.GetContext(r.Context(), &customer, SelectCustomerByIdSql, customerId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 			return
+		}
+
+		filteredLocations := func(locations []location, customerId string) []location {
+			filtered := make([]location, 0, len(locations))
+			for _, loc := range locations {
+				if loc.CustomerId == customerId {
+					filtered = append(filtered, loc)
+				}
+			}
+			return filtered
 		}
 
 		ChooseLocationTemplate(filteredLocations(locations, customerId), customerId, customer.Name).Render(r.Context(), w)
 	}
 }
 
-func stepTwoSubmitHandler(_ *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
+func visitStepTwoSubmitHandler(_ *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -105,7 +115,7 @@ func stepTwoSubmitHandler(_ *sqlx.DB, sessionManager *scs.SessionManager) http.H
 			return
 		}
 
-		sessionManager.Put(r.Context(), "location_id", locationId)
+		session.Put(r.Context(), "location_id", locationId)
 		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
 	}
 }
@@ -137,17 +147,17 @@ type VisitVMErrors struct {
 	HasNotesError bool
 }
 
-func stepThreeHandler(db *sqlx.DB, sessionManger *scs.SessionManager) http.HandlerFunc {
+func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// stop users going back to the form after submitting
 		// ---------------------------------------------
-		if sessionManger.GetString(r.Context(), "journey_complete") == "true" {
+		if session.GetString(r.Context(), "journey_complete") == "true" {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
-		locationId := sessionManger.GetString(r.Context(), "location_id")
+		locationId := session.GetString(r.Context(), "location_id")
 		if locationId == "" {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
@@ -158,14 +168,8 @@ func stepThreeHandler(db *sqlx.DB, sessionManger *scs.SessionManager) http.Handl
 			return
 		}
 
-		var loc struct {
-			LocationName string `db:"location_name"`
-			CustomerName string `db:"customer_name"`
-			CustomerId   string `db:"customer_id"`
-			LocationId   string `db:"location_id"`
-		}
-
-		if err := db.Get(&loc, SelectLocationById, locationId); err != nil {
+		var loc = locationData{}
+		if err := db.Get(&loc, SelectLocationByIdSql, locationId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting location - %v", err))
 			return
 		}
@@ -185,12 +189,12 @@ func stepThreeHandler(db *sqlx.DB, sessionManger *scs.SessionManager) http.Handl
 	}
 }
 
-func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, sessionManager *scs.SessionManager) http.HandlerFunc {
+func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// stop users going back to the form after submitting
 		// ---------------------------------------------
-		if sessionManager.GetBool(r.Context(), "journey_complete") == true {
+		if session.GetBool(r.Context(), "journey_complete") == true {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
@@ -213,10 +217,9 @@ func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, sessionManager *scs.
 			return
 		}
 
-		sessionManager.Put(r.Context(), "visit_id", strconv.Itoa(int(visitId)))
-		sessionManager.Put(r.Context(), "journey_complete", true)
-
-		http.Redirect(w, r, "/visits/log-visit/complete", http.StatusSeeOther)
+		session.Put(r.Context(), "visit_id", strconv.Itoa(int(visitId)))
+		session.Put(r.Context(), "journey_complete", true)
+		http.Redirect(w, r, "/visits/log-visit/confirm", http.StatusSeeOther)
 	}
 }
 
@@ -231,31 +234,26 @@ type VisitCompleteVm struct {
 	ImagePaths   []string
 }
 
-func confirmationHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
+func visitConfirmationHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// dont want this page hit directly
 		// ----------------------------------------------------
-		if sessionManager.Get(r.Context(), "journey_complete") == "" {
+		if session.Get(r.Context(), "journey_complete") == "" {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
 		var imagePaths = []string{}
-		visitId := sessionManager.GetString(r.Context(), "visit_id")
+		visitId := session.GetString(r.Context(), "visit_id")
 
 		if err := db.SelectContext(r.Context(), &imagePaths,
-			`SELECT filename from images where visit_id = ?;`, visitId); err != nil {
+			SelectImagePathsSql, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
 			return
 		}
 
-		var visit struct {
-			CustomerName string `db:"customer_name"`
-			LocationName string `db:"location_name"`
-			EmployeeName string `db:"employee_name"`
-		}
-
+		visit := visitData{}
 		if err := db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error geting visit data: %v", err))
 			return
@@ -358,4 +356,31 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		})
 	}
+}
+
+func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []customer, []location) {
+
+	var customers []customer
+	var locations []location
+
+	selectData := func(data any, name string, sql string) bool {
+		if err := db.SelectContext(r.Context(), data, sql); err != nil {
+			errorHandler(w, r, fmt.Sprintf("db: error selecting from table '%s' - %v", name, err))
+			return false
+		}
+		return true
+	}
+
+	ok := selectData(&customers, "customers", SelectCustomersSql)
+	if !ok {
+		return false, customers, locations
+	}
+
+	ok = selectData(&locations, "locations", SelectLocationsSql)
+	if !ok {
+		return false, customers, locations
+	}
+
+	return true, customers, locations
+
 }

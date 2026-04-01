@@ -4,6 +4,7 @@ import (
 	"embed"
 	"net/http"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 	"github.com/jmoiron/sqlx"
 )
@@ -14,26 +15,25 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-func ServerSetup(db *sqlx.DB, uploadsDir string, cookieKey []byte) chi.Router {
+func ServerSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
 
 	r := chi.NewRouter()
+	r.Use(sessions.LoadAndSave)
 	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
-
 	r.Group(func(site chi.Router) {
 
 		//site.Use(basicAuthHandler("matt", "test"))
 
-		site.HandleFunc("/", indexPageHandler())
-
+		site.HandleFunc("/", indexPageHandler(sessions))
 		site.Route("/visits", func(r chi.Router) {
 			r.Get("/choose-customer", stepOneHandler(db))
-			r.Post("/choose-customer", stepOneSubmitHandler(db, cookieKey))
-			r.Get("/choose-location", stepTwoHandler(db, cookieKey))
-			r.Post("/choose-location", stepTwoSubmitHandler(db, cookieKey))
+			r.Post("/choose-customer", stepOneSubmitHandler(db, sessions))
+			r.Get("/choose-location", stepTwoHandler(db, sessions))
+			r.Post("/choose-location", stepTwoSubmitHandler(db, sessions))
 			r.Route("/log-visit", func(r chi.Router) {
-				r.Get("/", stepThreeHandler(db, cookieKey))
-				r.Post("/", stepThreeSubmitHandler(db, uploadsDir, cookieKey))
-				r.Get("/complete", confirmationHandler(db, cookieKey))
+				r.Get("/", stepThreeHandler(db, sessions))
+				r.Post("/", stepThreeSubmitHandler(db, uploadsDir, sessions))
+				r.Get("/complete", confirmationHandler(db, sessions))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)
 				r.Post("/validate-time", validateVisitTimeHandler)

@@ -11,10 +11,11 @@ require (
 	golang.org/x/image v0.37.0
 )
 
+require github.com/alexedwards/scs/v2 v2.9.0
+
 require (
 	github.com/CAFxX/httpcompression v0.0.9 // indirect
 	github.com/andybalholm/brotli v1.2.0 // indirect
-	github.com/goforj/godump v1.9.1
 	// github.com/goforj/godump v1.9.1 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect

@@ -12,15 +12,15 @@ import (
 
 	// "github.com/goforj/godump"
 
+	"github.com/alexedwards/scs/v2"
 	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func indexPageHandler() http.HandlerFunc {
+func indexPageHandler(sessionManager *scs.SessionManager) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		deleteJourneyCookie(w)
-
+		sessionManager.Destroy(r.Context())
 		IndexPageTemplate().Render(r.Context(), w)
 	}
 }
@@ -36,7 +36,7 @@ func stepOneHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepOneSubmitHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -53,21 +53,15 @@ func stepOneSubmitHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 			return
 		}
 
-		updateJourneyCookie(w, r, cookieKey, map[string]string{"customer_id": customerId})
-
+		sessionManager.Put(r.Context(), "customer_id", customerId)
 		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
 	}
 }
 
-func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepTwoHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		journey, err := readJourneyCookie(r, cookieKey)
-		if err != nil {
-			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
-		}
-
-		customerId := journey["customer_id"]
+		customerId := sessionManager.GetString(r.Context(), "customer_id")
 		if customerId == "" {
 			errorHandler(w, r, "http: error reading customer_id from cookie path")
 			return
@@ -93,7 +87,7 @@ func stepTwoHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	}
 }
 
-func stepTwoSubmitHandler(_ *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepTwoSubmitHandler(_ *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -111,10 +105,7 @@ func stepTwoSubmitHandler(_ *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 			return
 		}
 
-		updateJourneyCookie(w, r, cookieKey, map[string]string{
-			"location_id": locationId,
-		})
-
+		sessionManager.Put(r.Context(), "location_id", locationId)
 		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
 	}
 }
@@ -146,22 +137,17 @@ type VisitVMErrors struct {
 	HasNotesError bool
 }
 
-func stepThreeHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func stepThreeHandler(db *sqlx.DB, sessionManger *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		journey, err := readJourneyCookie(r, cookieKey)
-		if err != nil {
-			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
-		}
 
 		// stop users going back to the form after submitting
 		// ---------------------------------------------
-		if journey["journey_complete"] == "true" {
+		if sessionManger.GetString(r.Context(), "journey_complete") == "true" {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
-		locationId := journey["location_id"]
+		locationId := sessionManger.GetString(r.Context(), "location_id")
 		if locationId == "" {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
@@ -199,18 +185,17 @@ func stepThreeHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
 	}
 }
 
-func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) http.HandlerFunc {
+func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, sessionManager *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// stop users going back to the form after submitting
 		// ---------------------------------------------
-		journey, err := readJourneyCookie(r, cookieKey)
-		if journey["journey_complete"] == "true" {
+		if sessionManager.GetBool(r.Context(), "journey_complete") == true {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
-		r, err = parseMultipart(r)
+		r, err := parseMultipart(r)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
 			return
@@ -228,10 +213,9 @@ func stepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, cookieKey []byte) ht
 			return
 		}
 
-		updateJourneyCookie(w, r, cookieKey, map[string]string{
-			"visit_id":         strconv.Itoa(int(visitId)),
-			"journey_complete": "true",
-		})
+		sessionManager.Put(r.Context(), "visit_id", strconv.Itoa(int(visitId)))
+		sessionManager.Put(r.Context(), "journey_complete", true)
+
 		http.Redirect(w, r, "/visits/log-visit/complete", http.StatusSeeOther)
 	}
 }
@@ -247,22 +231,19 @@ type VisitCompleteVm struct {
 	ImagePaths   []string
 }
 
-func confirmationHandler(db *sqlx.DB, cookieKey []byte) http.HandlerFunc {
+func confirmationHandler(db *sqlx.DB, sessionManager *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		// dont want this page hit directly
-		journey, err := readJourneyCookie(r, cookieKey)
-		if journey["journey_complete"] == "" {
+		// ----------------------------------------------------
+		if sessionManager.Get(r.Context(), "journey_complete") == "" {
 			http.Redirect(w, r, "/", http.StatusSeeOther)
 			return
 		}
 
 		var imagePaths = []string{}
-		if err != nil {
-			errorHandler(w, r, fmt.Sprintf("http: read journey error %v", err))
-		}
+		visitId := sessionManager.GetString(r.Context(), "visit_id")
 
-		visitId := journey["visit_id"]
 		if err := db.SelectContext(r.Context(), &imagePaths,
 			`SELECT filename from images where visit_id = ?;`, visitId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))

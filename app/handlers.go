@@ -54,7 +54,7 @@ func visitStepOneSubmitHandler(db *sqlx.DB, session *scs.SessionManager) http.Ha
 		}
 
 		session.Put(r.Context(), "customer_id", customerId)
-		http.Redirect(w, r, "/visits/choose-location", http.StatusSeeOther)
+		http.Redirect(w, r, "/visit/step-2/", http.StatusSeeOther)
 	}
 }
 
@@ -116,7 +116,7 @@ func visitStepTwoSubmitHandler(_ *sqlx.DB, session *scs.SessionManager) http.Han
 		}
 
 		session.Put(r.Context(), "location_id", locationId)
-		http.Redirect(w, r, "/visits/log-visit/", http.StatusSeeOther)
+		http.Redirect(w, r, "/visit/step-3/", http.StatusSeeOther)
 	}
 }
 
@@ -149,13 +149,6 @@ type VisitVMErrors struct {
 
 func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		// stop users going back to the form after submitting
-		// ---------------------------------------------
-		if session.GetString(r.Context(), "journey_complete") == "true" {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
 
 		locationId := session.GetString(r.Context(), "location_id")
 		if locationId == "" {
@@ -192,13 +185,6 @@ func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.Handle
 func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// stop users going back to the form after submitting
-		// ---------------------------------------------
-		if session.GetBool(r.Context(), "journey_complete") == true {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
-
 		r, err := parseMultipart(r)
 		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
@@ -217,59 +203,60 @@ func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.Se
 			return
 		}
 
-		session.Put(r.Context(), "visit_id", strconv.Itoa(int(visitId)))
-		session.Put(r.Context(), "journey_complete", true)
-		http.Redirect(w, r, "/visits/log-visit/confirm", http.StatusSeeOther)
+		session.Put(r.Context(), "visit_complete", strconv.Itoa(int(visitId)))
+		sse := datastar.NewSSE(w, r)
+		sse.PatchElementTempl(LogVisitCompleteTemplate())
+
 	}
 }
 
-type VisitCompleteVm struct {
-	LocationName string
-	CustomerName string
-	EmployeeName string
-	VisitId      string
-	Time         string
-	Date         string
-	Duration     string
-	ImagePaths   []string
-}
+// type VisitCompleteVm struct {
+// 	LocationName string
+// 	CustomerName string
+// 	EmployeeName string
+// 	VisitId      string
+// 	Time         string
+// 	Date         string
+// 	Duration     string
+// 	ImagePaths   []string
+// }
 
-func visitConfirmationHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+// func visitConfirmationHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
 
-		// dont want this page hit directly
-		// ----------------------------------------------------
-		if session.Get(r.Context(), "journey_complete") == "" {
-			http.Redirect(w, r, "/", http.StatusSeeOther)
-			return
-		}
+// 		// dont want this page hit directly
+// 		// ----------------------------------------------------
+// 		if session.Get(r.Context(), "journey_complete") == "" {
+// 			http.Redirect(w, r, "/", http.StatusSeeOther)
+// 			return
+// 		}
 
-		var imagePaths = []string{}
-		visitId := session.GetString(r.Context(), "visit_id")
+// 		var imagePaths = []string{}
+// 		visitId := session.GetString(r.Context(), "visit_id")
 
-		if err := db.SelectContext(r.Context(), &imagePaths,
-			SelectImagePathsSql, visitId); err != nil {
-			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
-			return
-		}
+// 		if err := db.SelectContext(r.Context(), &imagePaths,
+// 			SelectImagePathsSql, visitId); err != nil {
+// 			errorHandler(w, r, fmt.Sprintf("sql: error getting images - %v", err))
+// 			return
+// 		}
 
-		visit := visitData{}
-		if err := db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
-			errorHandler(w, r, fmt.Sprintf("sql: error geting visit data: %v", err))
-			return
-		}
+// 		visit := visitData{}
+// 		if err := db.GetContext(r.Context(), &visit, SelectVisitDataSql, visitId); err != nil {
+// 			errorHandler(w, r, fmt.Sprintf("sql: error geting visit data: %v", err))
+// 			return
+// 		}
 
-		cvm := VisitCompleteVm{
-			VisitId:      visitId,
-			LocationName: visit.LocationName,
-			EmployeeName: visit.EmployeeName,
-			CustomerName: visit.CustomerName,
-			ImagePaths:   imagePaths,
-		}
+// 		cvm := VisitCompleteVm{
+// 			VisitId:      visitId,
+// 			LocationName: visit.LocationName,
+// 			EmployeeName: visit.EmployeeName,
+// 			CustomerName: visit.CustomerName,
+// 			ImagePaths:   imagePaths,
+// 		}
 
-		VisitCompleteTemplate(cvm).Render(r.Context(), w)
-	}
-}
+// 		VisitCompleteTemplate(cvm).Render(r.Context(), w)
+// 	}
+// }
 
 type dateSignals struct {
 	VisitDate string `json:"visit_date"`

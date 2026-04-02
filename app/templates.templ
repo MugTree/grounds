@@ -40,7 +40,7 @@ templ IndexPageTemplate() {
 		<section>
 			<h1>Demos</h1>
 			<ul>
-				<li><a href="/visits/choose-customer">Create a visit</a></li>
+				<li><a href="/visit/step-1/">Create a visit</a></li>
 			</ul>
 		</section>
 	}
@@ -51,7 +51,7 @@ templ ChooseCustomerTemplate(customers []customer) {
 		<section>
 			<h1>Pick a customer</h1>
 			<p>Choose a customer to visit</p>
-			<form action="choose-customer" method="post">
+			<form action="/visit/step-1/" method="post">
 				<select
 					id="customers-sel"
 					name="customer_id"
@@ -65,9 +65,6 @@ templ ChooseCustomerTemplate(customers []customer) {
 				<button type="submit">Submit</button>
 			</form>
 		</section>
-		<section>
-			<h2>Previous visits</h2>
-		</section>
 	}
 }
 
@@ -77,7 +74,7 @@ templ ChooseLocationTemplate(locations []location, customerId string, customerNa
 			@BackButtonTemplate()
 			<h1>Choose a location</h1>
 			<p>Which of { customerName } locations are you visiting?</p>
-			<form action="choose-location" method="post">
+			<form action="/visit/step-2/" method="post">
 				if len(locations) != 0 {
 					if customerId != "0" {
 						<input type="hidden" name="customer_id" value={ customerId }/>
@@ -112,7 +109,7 @@ templ LogVisitTemplate(vm VisitVM) {
 				@BackButtonTemplate()
 				<h1>Record the visit</h1>
 				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
-				<form enctype="multipart/form-data" method="post" id="visit-form" action="/visits/log-visit/">
+				<form enctype="multipart/form-data" id="visit-form">
 					<section id="input">
 						<input type="hidden" name="location_id" value={ vm.LocationId }/>
 						<input type="hidden" name="location_name" value={ vm.LocationName }/>
@@ -141,9 +138,25 @@ templ LogVisitTemplate(vm VisitVM) {
 							</label>
 						</div>
 						<section id="thumbs"></section>
-						<button type="submit">Submit</button>
+						<button type="button" data-on:click="@post('/visit/step-3/', {'contentType':'form'})">Submit</button>
 					</section>
 				</form>
+			</section>
+		</div>
+	}
+}
+
+templ LogVisitCompleteTemplate() {
+	@LayoutTemplate() {
+		<div id="log-visit">
+			<section>
+				<h1>Visit added</h1>
+				<p>You'll be redirected back to the homepage in a second or two</p>
+				<script>
+					setInterval(function() {
+						window.location.href = "/"
+					}, 3000)
+				</script>
 			</section>
 		</div>
 	}
@@ -157,7 +170,7 @@ templ VisitDateInputTemplate(isSubmission bool, hasDateError bool) {
 			id="visit-date"
 			name="visit_date"
 			data-bind:visit_date
-			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-date`, {filterSignals: {include: '^visit_date$'}})"
+			data-on:change__debounce.100ms="@post(`/visit/step-3/validate-date`, {filterSignals: {include: '^visit_date$'}})"
 			if isSubmission {
 				if hasDateError {
 					aria-invalid="true"
@@ -177,7 +190,7 @@ templ VisitNotesInputTemplate(isSubmission bool, hasNoteError bool) {
 			id="visit-notes"
 			placeholder="Some notes about the visit..."
 			data-bind:visit_notes
-			data-on:blur__debounce.100ms="@post(`/visits/log-visit/validate-notes`, {filterSignals: {include: '^visit_notes$'}})"
+			data-on:blur__debounce.100ms="@post(`/visit/step-3/validate-notes`, {filterSignals: {include: '^visit_notes$'}})"
 			if isSubmission {
 				if hasNoteError {
 					aria-invalid="true"
@@ -197,7 +210,7 @@ templ VisitTimeInputTemplate(isSubmission bool, hasTimeError bool) {
 			id="visit-time"
 			name="visit_time"
 			data-bind:visit_time
-			data-on:change__debounce.100ms="@post(`/visits/log-visit/validate-time`, {filterSignals: {include: '^visit_time$'}})"
+			data-on:change__debounce.100ms="@post(`/visit/step-3/validate-time`, {filterSignals: {include: '^visit_time$'}})"
 			if isSubmission {
 				if hasTimeError {
 					aria-invalid="true"
@@ -207,32 +220,6 @@ templ VisitTimeInputTemplate(isSubmission bool, hasTimeError bool) {
 			}
 		/>
 	</label>
-}
-
-templ VisitCompleteTemplate(vm VisitCompleteVm) {
-	@LayoutTemplate() {
-		<div id="log-visit">
-			<section>
-				<h1>Confirmation</h1>
-				<p>Please confirm that the details below are correct...</p>
-				<input type="hidden" name="confirm" value={ vm.VisitId }/>
-				<ul>
-					<li>Location: { vm.LocationName }</li>
-					<li>Customer: { vm.CustomerName }</li>
-					<li>Employee: { vm.EmployeeName }</li>
-					<li>Time: { vm.Time }</li>
-					<li>Date: { vm.Date }</li>
-					<li>Duration: { vm.Duration }</li>
-				</ul>
-				<section id="thumbs">
-					for _, i := range vm.ImagePaths {
-						<img src={ i }/>
-					}
-				</section>
-				<div class="grid"></div>
-			</section>
-		</div>
-	}
 }
 
 templ VisitErrorTemplate() {

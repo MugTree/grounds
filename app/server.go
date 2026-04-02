@@ -28,15 +28,15 @@ func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) c
 		//site.Use(basicAuthHandler("matt", "test"))
 
 		site.HandleFunc("/", indexPageHandler(sessions))
-		site.Route("/visits", func(r chi.Router) {
-			r.Get("/choose-customer", visitStepOneHandler(db))
-			r.Post("/choose-customer", visitStepOneSubmitHandler(db, sessions))
-			r.Get("/choose-location", visitStepTwoHandler(db, sessions))
-			r.Post("/choose-location", visitStepTwoSubmitHandler(db, sessions))
-			r.Route("/log-visit", func(r chi.Router) {
+		site.Route("/visit", func(r chi.Router) {
+			r.Get("/step-1/", visitStepOneHandler(db))
+			r.Post("/step-1/", visitStepOneSubmitHandler(db, sessions))
+			r.Get("/step-2/", visitStepTwoHandler(db, sessions))
+			r.Post("/step-2/", visitStepTwoSubmitHandler(db, sessions))
+			r.Route("/step-3", func(r chi.Router) {
 				r.Get("/", visitStepThreeHandler(db, sessions))
 				r.Post("/", visitStepThreeSubmitHandler(db, uploadsDir, sessions))
-				r.Get("/confirm", visitConfirmationHandler(db, sessions))
+				//r.Get("/confirm", visitConfirmationHandler(db, sessions))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)
 				r.Post("/validate-time", validateVisitTimeHandler)

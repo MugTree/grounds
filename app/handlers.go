@@ -17,11 +17,40 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func indexPageHandler(sessionManager *scs.SessionManager) http.HandlerFunc {
+func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		sessionManager.Destroy(r.Context())
-		IndexPageTemplate().Render(r.Context(), w)
+
+		var visits = []visitByEmployee{}
+		meId := 1
+		db.SelectContext(r.Context(), &visits, SelectVisitsByEmployee, meId)
+
+		// have we been redirected from the visit journey
+		if session.Exists(r.Context(), "visit_complete") {
+
+			// kill the users session so
+			session.Destroy(r.Context())
+
+			// Pass something to the index page
+			// Some sort of template composition required here
+			/*
+
+				A user can get from one of two ways
+
+				direct
+				redirect
+				a redirect needs to show that something has just been added
+				so it's pretty much the same template - but with a small indication
+				that something has changed - depending upon how this is done
+				we could get rid of confirmation/js redirect at the end of the visit journey
+
+
+			*/
+
+		}
+
+		// To start with this needs to show the visits by employee
+		IndexPageTemplate(visits).Render(r.Context(), w)
 	}
 }
 

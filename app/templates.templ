@@ -35,13 +35,23 @@ templ LayoutTemplate() {
 	</html>
 }
 
-templ IndexPageTemplate() {
+templ IndexPageTemplate(visits []visitByEmployee) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Demos</h1>
 			<ul>
 				<li><a href="/visit/step-1/">Create a visit</a></li>
 			</ul>
+		</section>
+		<section>
+			<h2>Your previous visits</h2>
+			if len(visits) > 0 {
+				<ul>
+					for _, v := range visits {
+						<li>{ v.LocationName } - { v.EmployeeName }</li>
+					}
+				</ul>
+			}
 		</section>
 	}
 }

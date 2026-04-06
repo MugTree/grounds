@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+#!/bin/bash
 FILENAME=.env
 echo "Loading $FILENAME"
 

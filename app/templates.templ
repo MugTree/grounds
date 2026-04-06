@@ -1,5 +1,7 @@
 package app
 
+import "fmt"
+
 templ LayoutTemplate() {
 	<!DOCTYPE html>
 	<html lang="en">
@@ -35,7 +37,7 @@ templ LayoutTemplate() {
 	</html>
 }
 
-templ IndexPageTemplate(visits []visitByEmployee) {
+templ IndexPageTemplate(visits []visitByEmployee, message string) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Demos</h1>
@@ -44,14 +46,31 @@ templ IndexPageTemplate(visits []visitByEmployee) {
 			</ul>
 		</section>
 		<section>
+			if message != "" {
+				<p>{ message }</p>
+			}
 			<h2>Your previous visits</h2>
 			if len(visits) > 0 {
 				<ul>
 					for _, v := range visits {
-						<li>{ v.LocationName } - { v.EmployeeName }</li>
+						<li><a href={ templ.SafeURL(fmt.Sprintf("/visit/%v", v.VisitId)) }>{ v.LocationName }</a></li>
 					}
 				</ul>
 			}
+		</section>
+	}
+}
+
+templ ViewVisitTemplate() {
+	@LayoutTemplate() {
+		<section>
+			<h1>Visit: </h1>
+			<p>Description: </p>
+			<ul>
+				<li>Day: </li>
+				<li>Duration: </li>
+				<li>Time of day: </li>
+			</ul>
 		</section>
 	}
 }
@@ -119,7 +138,7 @@ templ LogVisitTemplate(vm VisitVM) {
 				@BackButtonTemplate()
 				<h1>Record the visit</h1>
 				<p>Please add any information for { vm.CustomerName } from the { vm.LocationName } site</p>
-				<form enctype="multipart/form-data" id="visit-form">
+				<form enctype="multipart/form-data" id="visit-form" method="post">
 					<section id="input">
 						<input type="hidden" name="location_id" value={ vm.LocationId }/>
 						<input type="hidden" name="location_name" value={ vm.LocationName }/>
@@ -148,7 +167,7 @@ templ LogVisitTemplate(vm VisitVM) {
 							</label>
 						</div>
 						<section id="thumbs"></section>
-						<button type="button" data-on:click="@post('/visit/step-3/', {'contentType':'form'})">Submit</button>
+						<button type="submit">Submit</button> // data-on:click="@post('/visit/step-3/', {'contentType':'form'})">Submit</button>
 					</section>
 				</form>
 			</section>

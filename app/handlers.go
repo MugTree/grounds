@@ -25,11 +25,17 @@ func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc
 		meId := 1
 		db.SelectContext(r.Context(), &visits, SelectVisitsByEmployee, meId)
 
-		// have we been redirected from the visit journey
+		message := ""
+
 		if session.Exists(r.Context(), "visit_complete") {
 
-			// kill the users session so
-			session.Destroy(r.Context())
+			// remove all the parts we dont need
+			// --------------------------------------------------
+			session.Remove(r.Context(), "customer_id")
+			session.Remove(r.Context(), "location_id")
+			session.Remove(r.Context(), "visit_complete")
+
+			message = "We've added your visit..."
 
 			// Pass something to the index page
 			// Some sort of template composition required here
@@ -49,8 +55,7 @@ func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc
 
 		}
 
-		// To start with this needs to show the visits by employee
-		IndexPageTemplate(visits).Render(r.Context(), w)
+		IndexPageTemplate(visits, message).Render(r.Context(), w)
 	}
 }
 
@@ -233,8 +238,7 @@ func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.Se
 		}
 
 		session.Put(r.Context(), "visit_complete", strconv.Itoa(int(visitId)))
-		sse := datastar.NewSSE(w, r)
-		sse.PatchElementTempl(LogVisitCompleteTemplate())
+		http.Redirect(w, r, "/", http.StatusSeeOther)
 
 	}
 }

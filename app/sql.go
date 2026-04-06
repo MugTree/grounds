@@ -18,11 +18,12 @@ const SelectCustomersSql string = `SELECT * FROM customer;`
 // --------------------------------------
 
 type visitByEmployee struct {
+	VisitId      string `db:"visit_id"`
 	EmployeeName string `db:"employee_name"`
 	LocationName string `db:"location_name"`
 }
 
-const SelectVisitsByEmployee string = `SELECT e.name AS employee_name, l.name AS location_name
+const SelectVisitsByEmployee string = `SELECT v.id AS visit_id,  e.name AS employee_name, l.name AS location_name
 FROM visits v
          INNER JOIN employee e ON v.employee_id = e.id
          INNER JOIN location l ON v.location_id = l.id

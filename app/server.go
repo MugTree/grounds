@@ -28,7 +28,11 @@ func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) c
 		//site.Use(basicAuthHandler("matt", "test"))
 
 		site.HandleFunc("/", indexPageHandler(db, sessions))
+
 		site.Route("/visit", func(r chi.Router) {
+			r.Get("/{visit_id}", func(w http.ResponseWriter, r *http.Request) {
+				ViewVisitTemplate().Render(r.Context(), w)
+			})
 			r.Get("/step-1/", visitStepOneHandler(db))
 			r.Post("/step-1/", visitStepOneSubmitHandler(db, sessions))
 			r.Get("/step-2/", visitStepTwoHandler(db, sessions))

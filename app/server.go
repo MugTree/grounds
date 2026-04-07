@@ -31,7 +31,18 @@ func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) c
 
 		site.Route("/visit", func(r chi.Router) {
 			r.Get("/{visit_id}", func(w http.ResponseWriter, r *http.Request) {
-				ViewVisitTemplate().Render(r.Context(), w)
+				vid, ok := pathValueAsIntOrErr(w, r, "visit_id")
+				if !ok {
+					return
+				}
+
+				d, err := selectVisitData(r.Context(), db, vid)
+				if err != nil {
+					errorHandler(w, r, err.Error(), 500)
+					return
+				}
+
+				ViewVisitTemplate(d).Render(r.Context(), w)
 			})
 			r.Get("/step-1/", visitStepOneHandler(db))
 			r.Post("/step-1/", visitStepOneSubmitHandler(db, sessions))

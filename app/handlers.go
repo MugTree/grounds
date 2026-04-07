@@ -21,14 +21,15 @@ func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		var visits = []visitByEmployee{}
-		meId := 1
-		db.SelectContext(r.Context(), &visits, SelectVisitsByEmployee, meId)
+		vbe, err := selectVisitsByEmployee(r.Context(), db, "1")
+		if err != nil {
+			errorHandler(w, r, err.Error())
+			return
+		}
 
 		message := ""
 
 		if session.Exists(r.Context(), "visit_complete") {
-
 			// remove all the parts we dont need
 			// --------------------------------------------------
 			session.Remove(r.Context(), "customer_id")
@@ -55,7 +56,7 @@ func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc
 
 		}
 
-		IndexPageTemplate(visits, message).Render(r.Context(), w)
+		IndexPageTemplate(vbe, message).Render(r.Context(), w)
 	}
 }
 
@@ -112,7 +113,7 @@ func visitStepTwoHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerF
 		}
 
 		var customer customer
-		if err := db.GetContext(r.Context(), &customer, SelectCustomerByIdSql, customerId); err != nil {
+		if err := db.GetContext(r.Context(), &customer, `SELECT * FROM customer WHERE id = $1`, customerId); err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 			return
 		}
@@ -195,9 +196,9 @@ func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.Handle
 			return
 		}
 
-		var loc = locationData{}
-		if err := db.Get(&loc, SelectLocationByIdSql, locationId); err != nil {
-			errorHandler(w, r, fmt.Sprintf("sql: error getting location - %v", err))
+		loc, err := selectLocationData(r.Context(), db, locationId)
+		if err != nil {
+			errorHandler(w, r, err.Error())
 			return
 		}
 

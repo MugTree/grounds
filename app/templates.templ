@@ -61,15 +61,15 @@ templ IndexPageTemplate(visits []visitByEmployee, message string) {
 	}
 }
 
-templ ViewVisitTemplate() {
+templ ViewVisitTemplate(vd visitData) {
 	@LayoutTemplate() {
 		<section>
-			<h1>Visit: </h1>
-			<p>Description: </p>
+			<h1>Visit: { vd.CustomerName } - { vd.LocationName }</h1>
+			// <p>Description: {  }</p>
 			<ul>
 				<li>Day: </li>
-				<li>Duration: </li>
-				<li>Time of day: </li>
+				<li>Duration: { vd.VisitDuration }</li>
+				<li>Time of day: { vd.VisitDateTime }</li>
 			</ul>
 		</section>
 	}

@@ -1,10 +1,10 @@
 package app
 
-const SaveImageSql string = `INSERT INTO images (visit_id, filename, original_name, mimetype, size, created_at) VALUES($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);`
+const SaveImageSql string = `INSERT INTO image (visit_id, filename, original_name, mimetype, size, created_at) VALUES($1, $2, $3, $4, $5, CURRENT_TIMESTAMP);`
 
 // --------------------------------------
 
-const InsertVisitSql string = `INSERT INTO visits (location_id, employee_id, notes) VALUES ($1, $2, $3);`
+const InsertVisitSql string = `INSERT INTO visit (location_id, employee_id, notes, datetime, duration) VALUES ($1, $2, $3, $4, $5);`
 
 // --------------------------------------
 
@@ -24,7 +24,7 @@ type visitByEmployee struct {
 }
 
 const SelectVisitsByEmployee string = `SELECT v.id AS visit_id,  e.name AS employee_name, l.name AS location_name
-FROM visits v
+FROM visit v
          INNER JOIN employee e ON v.employee_id = e.id
          INNER JOIN location l ON v.location_id = l.id
 WHERE e.id = $1;`
@@ -80,4 +80,4 @@ const SelectLocationByIdSql string = `
 
 // --------------------------------------
 
-const SelectImagePathsSql = `SELECT filename from images where visit_id = $1;`
+const SelectImagePathsSql = `SELECT filename from image where visit_id = $1;`

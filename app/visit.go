@@ -15,14 +15,30 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/goforj/godump"
 	"github.com/jmoiron/sqlx"
 	"golang.org/x/image/draw"
 )
 
 func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
+	godump.Dump(r.Form)
 	notes := r.FormValue("visit_notes")
 	locationId := r.FormValue("location_id")
+	visitDuration := r.FormValue("visit_duration")
+	visitDate := r.FormValue("visit_date")
+	visitTime := r.FormValue("visit_time")
+
+	dur, err := strconv.Atoi(visitDuration)
+	if err != nil {
+		return 0, fmt.Errorf("http: duration value looks wrong - %v", dur)
+	}
+
+	timeInput := visitDate + " " + visitTime
+	parsedDate, err := time.ParseInLocation("2006-01-02 15:04", timeInput, time.UTC)
+	if err != nil {
+		return 0, fmt.Errorf("validation: time parts dont form a correct date %s", parsedDate.String())
+	}
 
 	locationInt, err := strconv.Atoi(locationId)
 	if err != nil {
@@ -35,7 +51,7 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int6
 	}
 	defer tx.Rollback()
 
-	res, err := tx.Exec(InsertVisitSql, locationId, 1, notes)
+	res, err := tx.Exec(InsertVisitSql, locationId, 1, notes, parsedDate.String(), dur)
 	if err != nil {
 		return 0, fmt.Errorf("sql: insert visit failed - %w", err)
 	}

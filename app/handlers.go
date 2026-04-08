@@ -3,7 +3,9 @@ package app
 import (
 	"crypto/sha256"
 	"crypto/subtle"
+	"database/sql"
 	"fmt"
+	"main/app/db"
 	"net/http"
 	"runtime"
 	"strconv"
@@ -13,15 +15,14 @@ import (
 	// "github.com/goforj/godump"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/jmoiron/sqlx"
 	"github.com/starfederation/datastar-go/datastar"
 )
 
-func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+func indexPageHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		vbe, err := selectVisitsByEmployee(r.Context(), db, "1")
+		vbe, err := queries.GetVisitsByEmployee(r.Context(), 1)
 		if err != nil {
 			errorHandler(w, r, err.Error())
 			return
@@ -38,32 +39,16 @@ func indexPageHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc
 
 			message = "We've added your visit..."
 
-			// Pass something to the index page
-			// Some sort of template composition required here
-			/*
-
-				A user can get from one of two ways
-
-				direct
-				redirect
-				a redirect needs to show that something has just been added
-				so it's pretty much the same template - but with a small indication
-				that something has changed - depending upon how this is done
-				we could get rid of confirmation/js redirect at the end of the visit journey
-
-
-			*/
-
 		}
 
 		IndexPageTemplate(vbe, message).Render(r.Context(), w)
 	}
 }
 
-func visitStepOneHandler(db *sqlx.DB) http.HandlerFunc {
+func visitStepOneHandler(q *db.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		ok, customers, _ := getHomepageData(db, w, r)
+		ok, customers, _ := getHomepageData(q, w, r)
 		if !ok {
 			return
 		}
@@ -71,7 +56,7 @@ func visitStepOneHandler(db *sqlx.DB) http.HandlerFunc {
 	}
 }
 
-func visitStepOneSubmitHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+func visitStepOneSubmitHandler(q *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -79,8 +64,8 @@ func visitStepOneSubmitHandler(db *sqlx.DB, session *scs.SessionManager) http.Ha
 			return
 		}
 
-		if customerId == "0" {
-			ok, customers, _ := getHomepageData(db, w, r)
+		if customerId == 0 {
+			ok, customers, _ := getHomepageData(q, w, r)
 			if !ok {
 				return
 			}
@@ -93,46 +78,47 @@ func visitStepOneSubmitHandler(db *sqlx.DB, session *scs.SessionManager) http.Ha
 	}
 }
 
-func visitStepTwoHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+func visitStepTwoHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		customerId := session.GetString(r.Context(), "customer_id")
-		if customerId == "" {
+		customerID := session.GetInt64(r.Context(), "customer_id")
+		if customerID == 0 {
 			errorHandler(w, r, "http: error reading customer_id from cookie path")
 			return
 		}
 
-		ok, _, locations := getHomepageData(db, w, r)
+		ok, _, locations := getHomepageData(queries, w, r)
 		if !ok {
 			return
 		}
 
-		if customerId == "0" {
+		if customerID == 0 {
 			errorHandler(w, r, "http: tempered request")
 			return
 		}
 
-		var customer customer
-		if err := db.GetContext(r.Context(), &customer, `SELECT * FROM customer WHERE id = $1`, customerId); err != nil {
+		customer, err := queries.GetCustomerById(r.Context(), customerID)
+
+		if err != nil {
 			errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 			return
 		}
 
-		filteredLocations := func(locations []location, customerId string) []location {
-			filtered := make([]location, 0, len(locations))
+		filteredLocations := func(locations []db.Location, customerId int64) []db.Location {
+			filtered := make([]db.Location, 0, len(locations))
 			for _, loc := range locations {
-				if loc.CustomerId == customerId {
+				if loc.CustomerID == customerId {
 					filtered = append(filtered, loc)
 				}
 			}
 			return filtered
 		}
 
-		ChooseLocationTemplate(filteredLocations(locations, customerId), customerId, customer.Name).Render(r.Context(), w)
+		ChooseLocationTemplate(filteredLocations(locations, customerID), customerID, customer.Name).Render(r.Context(), w)
 	}
 }
 
-func visitStepTwoSubmitHandler(_ *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+func visitStepTwoSubmitHandler(_ *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -140,7 +126,7 @@ func visitStepTwoSubmitHandler(_ *sqlx.DB, session *scs.SessionManager) http.Han
 			return
 		}
 
-		if customerId == "0" {
+		if customerId == 0 {
 			errorHandler(w, r, "http: customer id not being set is 0")
 			return
 		}
@@ -160,10 +146,10 @@ type VisitVM struct {
 	Time         string
 	Duration     string
 	Notes        string
-	CustomerId   string
+	CustomerId   int64
 	CustomerName string
 	LocationName string
-	LocationId   string
+	LocationId   int64
 	IsComplete   bool
 	IsSubmission bool
 	VisitVMErrors
@@ -182,21 +168,21 @@ type VisitVMErrors struct {
 	HasNotesError bool
 }
 
-func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.HandlerFunc {
+func visitStepThreeHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		locationId := session.GetString(r.Context(), "location_id")
-		if locationId == "" {
+		locationId := session.GetInt64(r.Context(), "location_id")
+		if locationId == 0 {
 			errorHandler(w, r, "http: error reading location_id from cookie path")
 			return
 		}
 
-		if locationId == "0" {
+		if locationId == 0 {
 			errorHandler(w, r, "http: location_id is 0 this shouldn't happen")
 			return
 		}
 
-		loc, err := selectLocationData(r.Context(), db, locationId)
+		loc, err := queries.GetLocationById(r.Context(), locationId) //selectLocationData(r.Context(), db, locationId)
 		if err != nil {
 			errorHandler(w, r, err.Error())
 			return
@@ -207,8 +193,8 @@ func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.Handle
 			Duration:      "60",
 			CustomerName:  loc.CustomerName,
 			LocationName:  loc.LocationName,
-			CustomerId:    loc.CustomerId,
-			LocationId:    loc.LocationId,
+			CustomerId:    loc.CustomerID,
+			LocationId:    loc.LocationID,
 			IsSubmission:  false,
 			VisitVMErrors: VisitVMErrors{HasTimeError: false, HasDateError: false},
 		}
@@ -217,7 +203,7 @@ func visitStepThreeHandler(db *sqlx.DB, session *scs.SessionManager) http.Handle
 	}
 }
 
-func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.SessionManager) http.HandlerFunc {
+func visitStepThreeSubmitHandler(queries *db.Queries, sqldb *sql.DB, uploadsDir string, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		r, err := parseMultipart(r)
@@ -226,13 +212,18 @@ func visitStepThreeSubmitHandler(db *sqlx.DB, uploadsDir string, session *scs.Se
 			return
 		}
 
-		vm := validateVisit(r)
+		vm, err := validateVisit(r)
+		if err != nil {
+			errorHandler(w, r, err.Error())
+			return
+		}
+
 		if vm.HasErrors() {
 			LogVisitTemplate(vm).Render(r.Context(), w)
 			return
 		}
 
-		visitId, err := logVisitData(db, r, uploadsDir)
+		visitId, err := logVisitData(queries, sqldb, r, uploadsDir)
 		if err != nil {
 			errorHandler(w, r, err.Error())
 			return
@@ -379,29 +370,20 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 	}
 }
 
-func getHomepageData(db *sqlx.DB, w http.ResponseWriter, r *http.Request) (bool, []customer, []location) {
+func getHomepageData(database *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
 
-	var customers []customer
-	var locations []location
-
-	selectData := func(data any, name string, sql string) bool {
-		if err := db.SelectContext(r.Context(), data, sql); err != nil {
-			errorHandler(w, r, fmt.Sprintf("db: error selecting from table '%s' - %v", name, err))
-			return false
-		}
-		return true
+	cust, err := database.ListCustomers(r.Context())
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("sql: error getting customers: %v", err))
+		return false, []db.Customer{}, []db.Location{}
 	}
 
-	ok := selectData(&customers, "customers", SelectCustomersSql)
-	if !ok {
-		return false, customers, locations
+	loc, err := database.ListLocations(r.Context())
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("sql: error getting locations: %v", err))
+		return false, []db.Customer{}, []db.Location{}
 	}
 
-	ok = selectData(&locations, "locations", SelectLocationsSql)
-	if !ok {
-		return false, customers, locations
-	}
-
-	return true, customers, locations
+	return true, cust, loc
 
 }

@@ -9,43 +9,45 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/goforj/godump"
 )
 
-func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (string, bool) {
+func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
 
 	formVal := r.PathValue(key)
 
 	if formVal == "" {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
-		return "0", false
+		return 0, false
 	}
 
-	_, err := strconv.Atoi(formVal)
+	val, err := strconv.ParseInt(formVal, 10, 64)
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
-		return "0", false
+		return 0, false
 	}
 
-	return formVal, true
+	return val, true
 
 }
 
-func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (string, bool) {
+func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
 
 	formVal := r.FormValue(key)
 
 	if formVal == "" {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
-		return "0", false
+		return 0, false
 	}
 
-	_, err := strconv.Atoi(formVal)
+	val, err := strconv.ParseInt(formVal, 10, 64)
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
-		return "", false
+		return 0, false
 	}
 
-	return formVal, true
+	return val, true
 
 }
 
@@ -94,17 +96,26 @@ func hasNotesError(_ string) bool {
 	return false
 }
 
-func validateVisit(r *http.Request) VisitVM {
+// reliaistically would likely validate more
+func validateVisit(r *http.Request) (VisitVM, error) {
+
+	godump.Dump(r.Form)
 
 	vm := VisitVM{}
-	/* in a realistic scenario we would validate
-	everything
-	not just date and time
-	*/
 
-	vm.CustomerId = r.FormValue("customer_id")
+	// cid, err := strconv.ParseInt(r.FormValue("customer_id"), 10, 64)
+	// if err != nil {
+	// 	return vm, err
+	// }
+	// vm.CustomerId = cid
+
+	lid, err := strconv.ParseInt(r.FormValue("location_id"), 10, 64)
+	if err != nil {
+		return vm, err
+	}
+	vm.LocationId = lid
+
 	vm.CustomerName = r.FormValue("customer_name")
-	vm.LocationId = r.FormValue("location_id")
 	vm.LocationName = r.FormValue("location_name")
 	vm.Date = r.FormValue("visit_date")
 	vm.Time = r.FormValue("visit_date")
@@ -121,7 +132,7 @@ func validateVisit(r *http.Request) VisitVM {
 
 	vm.HasNotesError = false
 
-	return vm
+	return vm, nil
 
 }
 

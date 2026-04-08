@@ -1,13 +1,14 @@
 package app
 
 import (
+	"database/sql"
 	"embed"
 	"log"
+	"main/app/db"
 	"net/http"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
-	"github.com/jmoiron/sqlx"
 )
 
 //go:embed public/css/*.css
@@ -18,7 +19,7 @@ var staticFS embed.FS
 
 const JourneyCookieName string = "visit_journey"
 
-func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
+func RouterSetup(db *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(sessions.LoadAndSave)
@@ -36,7 +37,7 @@ func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) c
 					return
 				}
 
-				d, err := selectVisitData(r.Context(), db, vid)
+				d, err := db.GetVisitById(r.Context(), vid) //selectVisitData(r.Context(), queries, vid)
 				if err != nil {
 					errorHandler(w, r, err.Error(), 500)
 					return
@@ -50,7 +51,7 @@ func RouterSetup(db *sqlx.DB, uploadsDir string, sessions *scs.SessionManager) c
 			r.Post("/step-2/", visitStepTwoSubmitHandler(db, sessions))
 			r.Route("/step-3", func(r chi.Router) {
 				r.Get("/", visitStepThreeHandler(db, sessions))
-				r.Post("/", visitStepThreeSubmitHandler(db, uploadsDir, sessions))
+				r.Post("/", visitStepThreeSubmitHandler(db, sqldb, uploadsDir, sessions))
 				//r.Get("/confirm", visitConfirmationHandler(db, sessions))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)

@@ -1,6 +1,7 @@
 package app
 
 import "fmt"
+import "main/app/db"
 
 templ LayoutTemplate() {
 	<!DOCTYPE html>
@@ -37,7 +38,7 @@ templ LayoutTemplate() {
 	</html>
 }
 
-templ IndexPageTemplate(visits []visitByEmployee, message string) {
+templ IndexPageTemplate(visits []db.GetVisitsByEmployeeRow, message string) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Demos</h1>
@@ -53,7 +54,7 @@ templ IndexPageTemplate(visits []visitByEmployee, message string) {
 			if len(visits) > 0 {
 				<ul>
 					for _, v := range visits {
-						<li><a href={ templ.SafeURL(fmt.Sprintf("/visit/%v", v.VisitId)) }>{ v.LocationName }</a></li>
+						<li><a href={ templ.SafeURL(fmt.Sprintf("/visit/%v", v.VisitID)) }>{ v.LocationName }</a></li>
 					}
 				</ul>
 			}
@@ -61,7 +62,7 @@ templ IndexPageTemplate(visits []visitByEmployee, message string) {
 	}
 }
 
-templ ViewVisitTemplate(vd visitData) {
+templ ViewVisitTemplate(vd db.GetVisitByIdRow) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Visit: { vd.CustomerName } - { vd.LocationName }</h1>
@@ -69,13 +70,13 @@ templ ViewVisitTemplate(vd visitData) {
 			<ul>
 				<li>Day: </li>
 				<li>Duration: { vd.VisitDuration }</li>
-				<li>Time of day: { vd.VisitDateTime }</li>
+				<li>Time of day: { vd.VisitDatetime }</li>
 			</ul>
 		</section>
 	}
 }
 
-templ ChooseCustomerTemplate(customers []customer) {
+templ ChooseCustomerTemplate(customers []db.Customer) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Pick a customer</h1>
@@ -88,7 +89,7 @@ templ ChooseCustomerTemplate(customers []customer) {
 				>
 					<option selected disabled value="">Customers...</option>
 					for _, c := range customers {
-						<option value={ c.Id }>{ c.Name }</option>
+						<option value={ c.ID }>{ c.Name }</option>
 					}
 				</select>
 				<button type="submit">Submit</button>
@@ -97,7 +98,7 @@ templ ChooseCustomerTemplate(customers []customer) {
 	}
 }
 
-templ ChooseLocationTemplate(locations []location, customerId string, customerName string) {
+templ ChooseLocationTemplate(locations []db.Location, customerId int64, customerName string) {
 	@LayoutTemplate() {
 		<section>
 			@BackButtonTemplate()
@@ -105,7 +106,7 @@ templ ChooseLocationTemplate(locations []location, customerId string, customerNa
 			<p>Which of { customerName } locations are you visiting?</p>
 			<form action="/visit/step-2/" method="post">
 				if len(locations) != 0 {
-					if customerId != "0" {
+					if customerId != 0 {
 						<input type="hidden" name="customer_id" value={ customerId }/>
 					}
 					<select
@@ -115,7 +116,7 @@ templ ChooseLocationTemplate(locations []location, customerId string, customerNa
 					>
 						<option selected disabled value="">Locations...</option>
 						for _, l := range locations {
-							<option value={ l.Id }>{  } { l.Name }</option>
+							<option value={ l.ID }>{  } { l.Name }</option>
 						}
 					</select>
 					<button type="submit">Submit</button>

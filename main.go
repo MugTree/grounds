@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"main/app"
+	"main/app/db"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
-	"github.com/jmoiron/sqlx"
+
+	"database/sql"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -53,19 +55,21 @@ func run(parent context.Context) error {
 	sessionManager.Lifetime = 24 * time.Hour
 	sessionManager.Cookie.Name = app.JourneyCookieName
 
-	db, err := sqlx.Open("sqlite3", dbPath)
+	dbHandle, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return fmt.Errorf("sql: error opening DB - %v", err)
 	}
 
-	err = db.Ping()
+	err = dbHandle.Ping()
 	if err != nil {
 		return fmt.Errorf("sql: error pinging DB - %v", err)
 	}
 
+	queries := db.New(dbHandle)
+
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.RouterSetup(db, uploadsDir, sessionManager)
+			return app.RouterSetup(queries, dbHandle, uploadsDir, sessionManager)
 		}
 	}
 

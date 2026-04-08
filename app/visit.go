@@ -2,11 +2,13 @@ package app
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"fmt"
 	"image"
 	"image/jpeg"
 	_ "image/jpeg"
+	"main/app/db"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -16,11 +18,10 @@ import (
 	"time"
 
 	"github.com/goforj/godump"
-	"github.com/jmoiron/sqlx"
 	"golang.org/x/image/draw"
 )
 
-func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
+func logVisitData(queries *db.Queries, sqldb *sql.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
 	godump.Dump(r.Form)
 	notes := r.FormValue("visit_notes")
@@ -29,7 +30,7 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int6
 	visitDate := r.FormValue("visit_date")
 	visitTime := r.FormValue("visit_time")
 
-	dur, err := strconv.Atoi(visitDuration)
+	dur, err := strconv.ParseInt(visitDuration, 10, 64) //Atoi(visitDuration)
 	if err != nil {
 		return 0, fmt.Errorf("http: duration value looks wrong - %v", dur)
 	}
@@ -45,21 +46,32 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int6
 		return 0, fmt.Errorf("http: location value looks wrong - %v", locationInt)
 	}
 
-	tx, err := db.Beginx()
+	tx, err := sqldb.Begin()
 	if err != nil {
 		return 0, err
 	}
 	defer tx.Rollback()
+	qtx := queries.WithTx(tx)
 
-	res, err := tx.Exec(InsertVisitSql, locationId, 1, notes, parsedDate.String(), dur)
+	vid, err := qtx.CreateVisit(r.Context(),
+		db.CreateVisitParams{
+			LocationID: int64(locationInt),
+			EmployeeID: 1,
+			Notes:      sql.NullString{String: notes},
+			Datetime:   visitDate,
+			Duration:   dur,
+		},
+	)
+
+	//res, err := tx.Exec(InsertVisitSql, locationId, 1, notes, parsedDate.String(), dur)
 	if err != nil {
 		return 0, fmt.Errorf("sql: insert visit failed - %w", err)
 	}
 
-	vid, err := res.LastInsertId()
-	if err != nil {
-		return 0, err
-	}
+	// vid, err := res.LastInsertId()
+	// if err != nil {
+	// 	return 0, err
+	// }
 
 	if r.MultipartForm != nil {
 		photos := r.MultipartForm.File["visit_photos"]
@@ -100,15 +112,17 @@ func logVisitData(db *sqlx.DB, r *http.Request, uploadsDir string) (visitId int6
 				return 0, fmt.Errorf("saveToDisk: %w", err)
 			}
 
-			_, err = tx.ExecContext(
-				r.Context(),
-				SaveImageSql,
-				vid,
-				relPath,
-				fh.Filename,
-				mimetype,
-				fh.Size,
-			)
+			err = qtx.CreateImage(r.Context(), db.CreateImageParams{VisitID: vid, Filename: relPath, OriginalName: fh.Filename, Mimetype: sql.NullString{String: mimetype}, Size: sql.NullInt64{Int64: fh.Size}})
+
+			// _, err = tx.ExecContext(
+			// 	r.Context(),
+			// 	SaveImageSql,
+			// 	vid,
+			// 	relPath,
+			// 	fh.Filename,
+			// 	mimetype,
+			// 	fh.Size,
+			//)
 			if err != nil {
 				return 0, err
 			}

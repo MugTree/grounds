@@ -370,15 +370,15 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 	}
 }
 
-func getHomepageData(database *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
+func getHomepageData(queries *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
 
-	cust, err := database.ListCustomers(r.Context())
+	cust, err := queries.ListCustomers(r.Context())
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("sql: error getting customers: %v", err))
 		return false, []db.Customer{}, []db.Location{}
 	}
 
-	loc, err := database.ListLocations(r.Context())
+	loc, err := queries.ListLocations(r.Context())
 	if err != nil {
 		errorHandler(w, r, fmt.Sprintf("sql: error getting locations: %v", err))
 		return false, []db.Customer{}, []db.Location{}
@@ -386,4 +386,60 @@ func getHomepageData(database *db.Queries, w http.ResponseWriter, r *http.Reques
 
 	return true, cust, loc
 
+}
+
+func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+
+	formVal := r.PathValue(key)
+
+	if formVal == "" {
+		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
+		return 0, false
+	}
+
+	val, err := strconv.ParseInt(formVal, 10, 64)
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		return 0, false
+	}
+
+	return val, true
+
+}
+
+func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+
+	formVal := r.FormValue(key)
+
+	if formVal == "" {
+		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
+		return 0, false
+	}
+
+	val, err := strconv.ParseInt(formVal, 10, 64)
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		return 0, false
+	}
+
+	return val, true
+
+}
+
+func parseMultipart(r *http.Request) (*http.Request, error) {
+
+	ct := r.Header.Get("Content-Type")
+	if strings.HasPrefix(ct, "multipart/form-data") {
+		err := r.ParseMultipartForm(10 << 20)
+		if err != nil {
+			return r, err
+		}
+	} else {
+		err := r.ParseForm()
+		if err != nil {
+			return r, err
+		}
+	}
+
+	return r, nil
 }

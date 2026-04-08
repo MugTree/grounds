@@ -21,7 +21,7 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func logVisitData(queries *db.Queries, sqldb *sql.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
+func logVisitData(queries *db.Queries, dbHandle *sql.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
 	godump.Dump(r.Form)
 	notes := r.FormValue("visit_notes")
@@ -46,7 +46,7 @@ func logVisitData(queries *db.Queries, sqldb *sql.DB, r *http.Request, uploadsDi
 		return 0, fmt.Errorf("http: location value looks wrong - %v", locationInt)
 	}
 
-	tx, err := sqldb.Begin()
+	tx, err := dbHandle.Begin()
 	if err != nil {
 		return 0, err
 	}
@@ -113,16 +113,6 @@ func logVisitData(queries *db.Queries, sqldb *sql.DB, r *http.Request, uploadsDi
 			}
 
 			err = qtx.CreateImage(r.Context(), db.CreateImageParams{VisitID: vid, Filename: relPath, OriginalName: fh.Filename, Mimetype: sql.NullString{String: mimetype}, Size: sql.NullInt64{Int64: fh.Size}})
-
-			// _, err = tx.ExecContext(
-			// 	r.Context(),
-			// 	SaveImageSql,
-			// 	vid,
-			// 	relPath,
-			// 	fh.Filename,
-			// 	mimetype,
-			// 	fh.Size,
-			//)
 			if err != nil {
 				return 0, err
 			}

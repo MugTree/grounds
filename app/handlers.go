@@ -93,7 +93,7 @@ func visitStepTwoHandler(queries *db.Queries, session *scs.SessionManager) http.
 		}
 
 		if customerID == 0 {
-			errorHandler(w, r, "http: tempered request")
+			errorHandler(w, r, "http: tampered request?")
 			return
 		}
 

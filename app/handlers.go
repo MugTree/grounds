@@ -45,10 +45,10 @@ func indexPageHandler(queries *db.Queries, session *scs.SessionManager) http.Han
 	}
 }
 
-func visitStepOneHandler(q *db.Queries) http.HandlerFunc {
+func visitStepOneHandler(queries *db.Queries) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		ok, customers, _ := getHomepageData(q, w, r)
+		ok, customers, _ := getHomepageData(queries, w, r)
 		if !ok {
 			return
 		}
@@ -56,7 +56,7 @@ func visitStepOneHandler(q *db.Queries) http.HandlerFunc {
 	}
 }
 
-func visitStepOneSubmitHandler(q *db.Queries, session *scs.SessionManager) http.HandlerFunc {
+func visitStepOneSubmitHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
@@ -65,7 +65,7 @@ func visitStepOneSubmitHandler(q *db.Queries, session *scs.SessionManager) http.
 		}
 
 		if customerId == 0 {
-			ok, customers, _ := getHomepageData(q, w, r)
+			ok, customers, _ := getHomepageData(queries, w, r)
 			if !ok {
 				return
 			}

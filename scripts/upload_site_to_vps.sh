@@ -16,7 +16,7 @@ while true; do
         ssh -n $USER "sudo systemctl stop $SERVICE_NAME && exit"
         echo "stopped $SERVICE_NAME ..."
         echo "copying latest files ..."
-        rsync -rv $LOCAL_DIRECTORY/data/vttracker.db $USER:$REMOTE_DIRECTORY/
+        rsync -rv $LOCAL_DIRECTORY/vttracker.db $USER:$REMOTE_DIRECTORY/
         rsync -rv $LOCAL_DIRECTORY/bin/server $USER:$REMOTE_DIRECTORY/
         ssh -n $USER " echo pwd && sudo systemctl start $SERVICE_NAME &&  exit"
         echo "starting $SERVICE_NAME ..."

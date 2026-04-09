@@ -19,7 +19,7 @@ var staticFS embed.FS
 
 const JourneyCookieName string = "visit_journey"
 
-func RouterSetup(db *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
+func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(sessions.LoadAndSave)
@@ -28,7 +28,7 @@ func RouterSetup(db *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs
 
 		//site.Use(basicAuthHandler("matt", "test"))
 
-		site.HandleFunc("/", indexPageHandler(db, sessions))
+		site.HandleFunc("/", indexPageHandler(queries, sessions))
 
 		site.Route("/visit", func(r chi.Router) {
 			r.Get("/{visit_id}", func(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,7 @@ func RouterSetup(db *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs
 					return
 				}
 
-				d, err := db.GetVisitById(r.Context(), vid) //selectVisitData(r.Context(), queries, vid)
+				d, err := queries.GetVisitById(r.Context(), vid) //selectVisitData(r.Context(), queries, vid)
 				if err != nil {
 					errorHandler(w, r, err.Error(), 500)
 					return
@@ -45,13 +45,13 @@ func RouterSetup(db *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs
 
 				ViewVisitTemplate(d).Render(r.Context(), w)
 			})
-			r.Get("/step-1/", visitStepOneHandler(db))
-			r.Post("/step-1/", visitStepOneSubmitHandler(db, sessions))
-			r.Get("/step-2/", visitStepTwoHandler(db, sessions))
-			r.Post("/step-2/", visitStepTwoSubmitHandler(db, sessions))
+			r.Get("/step-1/", visitStepOneHandler(queries))
+			r.Post("/step-1/", visitStepOneSubmitHandler(queries, sessions))
+			r.Get("/step-2/", visitStepTwoHandler(queries, sessions))
+			r.Post("/step-2/", visitStepTwoSubmitHandler(queries, sessions))
 			r.Route("/step-3", func(r chi.Router) {
-				r.Get("/", visitStepThreeHandler(db, sessions))
-				r.Post("/", visitStepThreeSubmitHandler(db, sqldb, uploadsDir, sessions))
+				r.Get("/", visitStepThreeHandler(queries, sessions))
+				r.Post("/", visitStepThreeSubmitHandler(queries, sqldb, uploadsDir, sessions))
 				//r.Get("/confirm", visitConfirmationHandler(db, sessions))
 				r.Post("/validate-date", validateVisitDateHandler)
 				r.Post("/validate-notes", validateVisitNotesHandler)

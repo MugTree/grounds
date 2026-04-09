@@ -31,20 +31,7 @@ func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions
 		site.HandleFunc("/", indexPageHandler(queries, sessions))
 
 		site.Route("/visit", func(r chi.Router) {
-			r.Get("/{visit_id}", func(w http.ResponseWriter, r *http.Request) {
-				vid, ok := pathValueAsIntOrErr(w, r, "visit_id")
-				if !ok {
-					return
-				}
-
-				d, err := queries.GetVisitById(r.Context(), vid) //selectVisitData(r.Context(), queries, vid)
-				if err != nil {
-					errorHandler(w, r, err.Error(), 500)
-					return
-				}
-
-				ViewVisitTemplate(d).Render(r.Context(), w)
-			})
+			r.Get("/{visit_id}", visitPageHandler(queries, sessions))
 			r.Get("/step-1/", visitStepOneHandler(queries))
 			r.Post("/step-1/", visitStepOneSubmitHandler(queries, sessions))
 			r.Get("/step-2/", visitStepTwoHandler(queries, sessions))

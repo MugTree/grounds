@@ -62,15 +62,15 @@ templ IndexPageTemplate(visits []db.GetVisitsByEmployeeRow, message string) {
 	}
 }
 
-templ ViewVisitTemplate(vd db.GetVisitByIdRow) {
+// templ ViewVisitTemplate(vd db.GetVisitByIdRow) {
+templ ViewVisitTemplate(customerName string, locationName string, duration string, shortDate string) {
 	@LayoutTemplate() {
 		<section>
-			<h1>Visit: { vd.CustomerName } - { vd.LocationName }</h1>
+			<h1>Visit: { customerName } - { locationName }</h1>
 			// <p>Description: {  }</p>
 			<ul>
-				<li>Day: </li>
-				<li>Duration: { vd.VisitDuration } mins</li>
-				<li>Time of day: { vd.VisitDatetime }</li>
+				<li>Day: { shortDate }</li>
+				<li>Duration: { duration } </li>
 			</ul>
 		</section>
 	}

@@ -18,6 +18,35 @@ import (
 	"github.com/starfederation/datastar-go/datastar"
 )
 
+func visitPageHandler(queries *db.Queries, _ *scs.SessionManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vid, ok := pathValueAsIntOrErr(w, r, "visit_id")
+		if !ok {
+			return
+		}
+
+		d, err := queries.GetVisitById(r.Context(), vid)
+		if err != nil {
+			errorHandler(w, r, err.Error(), 500)
+			return
+		}
+
+		t, err := time.Parse(time.RFC3339, d.VisitDatetime)
+		if err != nil {
+			errorHandler(w, r, err.Error(), 500)
+			return
+		}
+
+		ViewVisitTemplate(
+			d.CustomerName,
+			d.LocationName,
+			fmt.Sprintf("%v minutes", d.VisitDuration),
+			t.Format("Mon Jan _2"),
+		).Render(r.Context(), w)
+	}
+
+}
+
 func indexPageHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {

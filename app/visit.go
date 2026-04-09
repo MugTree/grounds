@@ -36,8 +36,9 @@ func logVisitData(queries *db.Queries, dbHandle *sql.DB, r *http.Request, upload
 		return 0, fmt.Errorf("http: duration value looks wrong - %v", dur)
 	}
 
-	timeInput := visitDate + " " + visitTime
-	parsedDate, err := time.ParseInLocation("2006-01-02 15:04", timeInput, time.UTC)
+	timeInput := visitDate + "T" + visitTime + ":00Z"
+
+	parsedDate, err := time.Parse(time.RFC3339, timeInput)
 	if err != nil {
 		return 0, fmt.Errorf("validation: time parts dont form a correct date %s", parsedDate.String())
 	}
@@ -59,7 +60,7 @@ func logVisitData(queries *db.Queries, dbHandle *sql.DB, r *http.Request, upload
 			LocationID: int64(locationInt),
 			EmployeeID: 1,
 			Notes:      sql.NullString{String: notes},
-			Datetime:   visitDate,
+			Datetime:   parsedDate.Format(time.RFC3339),
 			Duration:   dur,
 		},
 	)

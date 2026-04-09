@@ -21,9 +21,3 @@ goose -dir ./data/seeds -no-versioning up
 ```
 
 # Todo
-
-- Flash message on the index page on confirm
-
-Migration add
-date time
-duration

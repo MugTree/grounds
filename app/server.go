@@ -17,7 +17,7 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-const JourneyCookieName string = "visit_journey"
+const SessionCookieName string = "session"
 
 func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
 
@@ -26,9 +26,10 @@ func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions
 	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
 	r.Group(func(site chi.Router) {
 
-		//site.Use(basicAuthHandler("matt", "test"))
+		// site.Use(basicAuthHandler("matt", "test"))
 
 		site.HandleFunc("/", indexPageHandler(queries, sessions))
+		site.HandleFunc("/login", loginHandler(queries, sessions))
 
 		site.Route("/visit", func(r chi.Router) {
 			r.Get("/{visit_id}", visitPageHandler(queries, sessions))

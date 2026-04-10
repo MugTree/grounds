@@ -13,6 +13,7 @@ import (
 	"main/app"
 	"main/app/db"
 
+	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"
 
@@ -51,10 +52,6 @@ func run(parent context.Context) error {
 	appPort := mustEnv("VT_APP_PORT")
 	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
 
-	sessionManager := scs.New()
-	sessionManager.Lifetime = 24 * time.Hour
-	sessionManager.Cookie.Name = app.JourneyCookieName
-
 	dbHandle, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return fmt.Errorf("sql: error opening DB - %v", err)
@@ -64,6 +61,10 @@ func run(parent context.Context) error {
 	if err != nil {
 		return fmt.Errorf("sql: error pinging DB - %v", err)
 	}
+
+	sessionManager := scs.New()
+	sessionManager.Cookie.Name = app.SessionCookieName
+	sessionManager.Store = sqlite3store.New(dbHandle)
 
 	queries := db.New(dbHandle)
 

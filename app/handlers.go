@@ -47,6 +47,37 @@ func visitPageHandler(queries *db.Queries, _ *scs.SessionManager) http.HandlerFu
 
 }
 
+/*
+q: what if user is already logged in and hits this ?
+q: do we redirect non logins to this ?
+q: do logged in get redirected to hp
+*/
+
+func loginHandler(_ *db.Queries, _ *scs.SessionManager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		switch r.Method {
+		case "GET":
+			LoginTemplate().Render(r.Context(), w)
+			return
+		case "POST":
+
+			// https://github.com/alexedwards/scs/tree/master/sqlite3store
+
+			// use the sessions handler to create a user session
+
+			name := r.FormValue("name")
+			password := r.FormValue("password")
+
+			fmt.Println(name, " ", password)
+
+		default:
+			errorHandler(w, r, fmt.Sprintf("%v - method not supported", r.Method), 404)
+		}
+
+	}
+}
+
 func indexPageHandler(queries *db.Queries, session *scs.SessionManager) http.HandlerFunc {
 
 	return func(w http.ResponseWriter, r *http.Request) {

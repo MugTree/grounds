@@ -63,7 +63,6 @@ func run(parent context.Context) error {
 	}
 
 	sessionManager := scs.New()
-	sessionManager.Cookie.Name = app.SessionCookieName
 	sessionManager.Store = sqlite3store.New(dbHandle)
 
 	queries := db.New(dbHandle)

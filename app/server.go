@@ -17,8 +17,6 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-const SessionCookieName string = "session"
-
 func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
 
 	r := chi.NewRouter()

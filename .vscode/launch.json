@@ -7,7 +7,8 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}",
-      "buildFlags": "-gcflags=all=-N -l"
+      "output": "./tmp/debug",
+      "envFile": "/Users/me/home/Dev/go-projects/visit-tracker/.env"
     }
   ]
 }

@@ -37,8 +37,6 @@ func run(parent context.Context) error {
 	ctx, cancel := context.WithCancel(parent)
 	defer cancel()
 
-	app.LogInfo("reading .env")
-
 	mustEnv := func(key string) string {
 		val, ok := os.LookupEnv(key)
 		if !ok {

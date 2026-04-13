@@ -7,7 +7,7 @@
       "request": "launch",
       "mode": "debug",
       "program": "${workspaceFolder}",
-      "buildFlags": "-gcflags=all=-N\\ -l"
+      "buildFlags": "-gcflags=all=-N -l"
     }
   ]
 }

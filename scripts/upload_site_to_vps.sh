@@ -1,12 +1,12 @@
 #!/bin/bash
-DOMAIN_NAME="www.brickphone.co.uk"
-PROJECT_NAME="Brickphone"
+DOMAIN_NAME="grounds.citybits.co.uk"
+PROJECT_NAME="GroundsCityBits"
 CURRENT_DATE=$(date "+%F_%T")
-LOCAL_DIRECTORY="/Users/me/home/Dev/go-projects/visit-tracker"
-REMOTE_DIRECTORY="/srv/apps/app1"
-USER="deploy@brickphone.co.uk"
+LOCAL_DIRECTORY="/Users/me/home/Dev/go-projects/grounds-maintenance"
+REMOTE_DIRECTORY="/srv/apps/citybits/grounds"
+USER="deploy@citybits.co.uk"
 HAS_UPLOADED=0
-SERVICE_NAME="app1.service"
+SERVICE_NAME="grounds.citybits.service"
 
 while true; do
     read -p "Upload latest build of ${PROJECT_NAME} to ${DOMAIN_NAME}?: " yn

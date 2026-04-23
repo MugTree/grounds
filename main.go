@@ -46,9 +46,9 @@ func run(parent context.Context) error {
 		return val
 	}
 
-	dbPath := mustEnv("VT_APP_DB")
-	appPort := mustEnv("VT_APP_PORT")
-	uploadsDir := mustEnv("VT_APP_UPLOADS_DIR")
+	dbPath := mustEnv("APP_DB")
+	appPort := mustEnv("APP_PORT")
+	uploadsDir := mustEnv("APP_UPLOADS_DIR")
 
 	dbHandle, err := sql.Open("sqlite3", dbPath)
 	if err != nil {

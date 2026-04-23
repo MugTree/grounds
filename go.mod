@@ -1,4 +1,4 @@
-module main
+module github.com/mugtree/grounds
 
 go 1.25.0
 

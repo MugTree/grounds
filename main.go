@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"main/app"
-	"main/app/db"
+	"github.com/mugtree/grounds/app"
+	"github.com/mugtree/grounds/app/db"
 
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"

@@ -4,8 +4,9 @@ import (
 	"database/sql"
 	"embed"
 	"log"
-	"main/app/db"
 	"net/http"
+
+	"github.com/mugtree/grounds/app/db"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/go-chi/chi/v5"

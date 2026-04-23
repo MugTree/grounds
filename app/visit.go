@@ -9,10 +9,11 @@ import (
 	"image"
 	"image/jpeg"
 	_ "image/jpeg"
-	"main/app/db"
 	"os"
 	"path/filepath"
 	"strconv"
+
+	"github.com/mugtree/grounds/app/db"
 
 	"io"
 	"net/http"

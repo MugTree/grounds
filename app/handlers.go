@@ -422,6 +422,7 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			username, password, ok := r.BasicAuth()
+
 			if ok {
 				usernameHash := sha256.Sum256([]byte(username))
 				passwordHash := sha256.Sum256([]byte(password))

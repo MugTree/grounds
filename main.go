@@ -48,6 +48,8 @@ func run(parent context.Context) error {
 
 	dbPath := mustEnv("APP_DB")
 	appPort := mustEnv("APP_PORT")
+	appUser := mustEnv("APP_USER")
+	appPassword := mustEnv("APP_PASSWORD")
 	uploadsDir := mustEnv("APP_UPLOADS_DIR")
 
 	dbHandle, err := sql.Open("sqlite3", dbPath)
@@ -67,7 +69,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.RouterSetup(queries, dbHandle, uploadsDir, sessionManager)
+			return app.RouterSetup(queries, dbHandle, uploadsDir, sessionManager, appUser, appPassword)
 		}
 	}
 

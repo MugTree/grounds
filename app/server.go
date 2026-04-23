@@ -18,14 +18,14 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
-func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager) chi.Router {
+func RouterSetup(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sessions *scs.SessionManager, user string, password string) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(sessions.LoadAndSave)
 	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
 	r.Group(func(site chi.Router) {
 
-		// site.Use(basicAuthHandler("matt", "test"))
+		site.Use(basicAuthHandler(user, password))
 
 		site.HandleFunc("/", indexPageHandler(queries, sessions))
 		site.HandleFunc("/login", loginHandler(queries, sessions))

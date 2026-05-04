@@ -23,6 +23,26 @@ import (
 	"golang.org/x/image/draw"
 )
 
+func getHomepageData(queries *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
+
+	ctx := r.Context()
+
+	cust, err := queries.ListCustomers(ctx)
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("sql: error getting customers: %v", err))
+		return false, []db.Customer{}, []db.Location{}
+	}
+
+	loc, err := queries.ListLocations(ctx)
+	if err != nil {
+		errorHandler(w, r, fmt.Sprintf("sql: error getting locations: %v", err))
+		return false, []db.Customer{}, []db.Location{}
+	}
+
+	return true, cust, loc
+
+}
+
 func logVisitData(queries *db.Queries, dbHandle *sql.DB, r *http.Request, uploadsDir string) (visitId int64, err error) {
 
 	godump.Dump(r.Form)

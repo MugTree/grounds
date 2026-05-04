@@ -69,7 +69,7 @@ func run(parent context.Context) error {
 
 	appRouterSetup := func() func() chi.Router {
 		return func() chi.Router {
-			return app.RouterSetup(queries, dbHandle, uploadsDir, sessionManager, appUser, appPassword)
+			return app.ServerSetup(queries, dbHandle, uploadsDir, sessionManager, appUser, appPassword)
 		}
 	}
 

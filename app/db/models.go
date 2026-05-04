@@ -34,6 +34,12 @@ type Location struct {
 	CustomerID int64
 }
 
+type Session struct {
+	Token  string
+	Data   []byte
+	Expiry float64
+}
+
 type Visit struct {
 	ID         int64
 	LocationID int64

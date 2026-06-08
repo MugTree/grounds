@@ -8,14 +8,12 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/mugtree/grounds/app"
 	"github.com/mugtree/grounds/app/db"
 
 	"github.com/alexedwards/scs/sqlite3store"
 	"github.com/alexedwards/scs/v2"
-	"github.com/go-chi/chi/v5"
 
 	"database/sql"
 
@@ -34,14 +32,11 @@ func main() {
 }
 
 func run(parent context.Context) error {
-	ctx, cancel := context.WithCancel(parent)
-	defer cancel()
 
 	mustEnv := func(key string) string {
 		val, ok := os.LookupEnv(key)
 		if !ok {
-			app.LogError(fmt.Sprintf("env: missing required env var: %s", key))
-			os.Exit(1)
+			log.Fatalf("missing .env: %s", key)
 		}
 		return val
 	}
@@ -67,45 +62,26 @@ func run(parent context.Context) error {
 
 	queries := db.New(dbHandle)
 
-	appRouterSetup := func() func() chi.Router {
-		return func() chi.Router {
-			return app.ServerSetup(queries, dbHandle, uploadsDir, sessionManager, appUser, appPassword)
-		}
+	webserver := &http.Server{
+		Addr:    ":" + appPort,
+		Handler: app.SetupHttpServer(queries, dbHandle, uploadsDir, sessionManager, appUser, appPassword),
 	}
 
-	app := appRouterSetup()
-	return runBlocking(ctx, appPort, app())
-}
+	application := app.NewApp(dbHandle, queries, webserver)
 
-func runBlocking(ctx context.Context, host string, router http.Handler) error {
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", host),
-		Handler: router,
-	}
-
-	app.LogInfo("Starting app server")
-
+	// bind OS signal context → app shutdown
 	go func() {
-		<-ctx.Done()
-
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		app.LogInfo("Shutting down server...")
-
-		if err := server.Shutdown(shutdownCtx); err != nil {
-			app.LogError(fmt.Sprintf("shutdown: error during shutdown: %v", err))
-		}
+		<-parent.Done()
+		application.Stop()
 	}()
 
-	app.LogInfo(fmt.Sprintf("Server running at http://localhost%s", server.Addr))
+	application.Start()
 
-	err := server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		return fmt.Errorf("server error: %w", err)
+	if err := application.Wait(); err != nil {
+		return err
 	}
 
-	app.LogInfo("Server stopped.")
+	app.LogInfo("server stopped cleanly")
 	return nil
+
 }

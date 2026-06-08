@@ -5,4 +5,4 @@ bin
 .DS_Store
 data/raw_pics
 uploads
-data/vttracker.db
+grounds.db

@@ -24,8 +24,6 @@ import (
 	"golang.org/x/image/draw"
 )
 
-type VisitByEmployee = db.GetVisitsByEmployeeRow
-
 func getCustomersAndLocations(queries *db.Queries, ctx context.Context) ([]db.Customer, []db.Location, error) {
 
 	customers, err := queries.ListCustomers(ctx)

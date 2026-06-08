@@ -1,7 +1,6 @@
 package app
 
 import "fmt"
-import "github.com/mugtree/grounds/app/db"
 
 templ LayoutTemplate() {
 	<!DOCTYPE html>
@@ -66,7 +65,7 @@ templ LoginLayoutTemplate() {
 	</html>
 }
 
-templ IndexPageTemplate(visits []db.GetVisitsByEmployeeRow, message string) {
+templ IndexPageTemplate(visits []VisitByEmployee, message string) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Demos</h1>
@@ -121,7 +120,7 @@ templ LoginTemplate() {
 	}
 }
 
-templ ChooseCustomerTemplate(customers []db.Customer) {
+templ ChooseCustomerTemplate(customers []Customer) {
 	@LayoutTemplate() {
 		<section>
 			<h1>Pick a customer</h1>
@@ -143,7 +142,7 @@ templ ChooseCustomerTemplate(customers []db.Customer) {
 	}
 }
 
-templ ChooseLocationTemplate(locations []db.Location, customerId int64, customerName string) {
+templ ChooseLocationTemplate(locations []Location, customerId int64, customerName string) {
 	@LayoutTemplate() {
 		<section>
 			@BackButtonTemplate()
@@ -177,7 +176,7 @@ templ BackButtonTemplate() {
 	<span style="float: right;"><a href="#" onclick="history.back(); return false;">&lt; Back</a></span>
 }
 
-templ LogVisitTemplate(vm VisitVM) {
+templ LogVisitTemplate(vm VisitTemplateData) {
 	@LayoutTemplate() {
 		<div id="log-visit">
 			<section>

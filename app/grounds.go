@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"crypto/rand"
 	"database/sql"
 	"encoding/hex"
@@ -23,23 +24,56 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func getCustomersAndLocations(queries *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
+func getCustomerByID(queries *db.Queries, ctx context.Context, customerID int64) (Customer, error) {
 
-	ctx := r.Context()
-
-	cust, err := queries.ListCustomers(ctx)
+	cust, err := queries.GetCustomerById(ctx, customerID)
 	if err != nil {
-		errorHandler(w, r, fmt.Sprintf("sql: error getting customers: %v", err))
-		return false, []db.Customer{}, []db.Location{}
+		return Customer{}, err
 	}
 
-	loc, err := queries.ListLocations(ctx)
+	return Customer(cust), nil
+}
+
+func getVisitsByEmployee(queries *db.Queries, ctx context.Context, employeeID int64) ([]VisitByEmployee, error) {
+
+	visits := []VisitByEmployee{}
+
+	vbe, err := queries.GetVisitsByEmployee(ctx, employeeID)
 	if err != nil {
-		errorHandler(w, r, fmt.Sprintf("sql: error getting locations: %v", err))
-		return false, []db.Customer{}, []db.Location{}
+		return visits, err
 	}
 
-	return true, cust, loc
+	for _, v := range vbe {
+		visits = append(visits, VisitByEmployee(v))
+	}
+	return visits, nil
+
+}
+
+func getCustomersAndLocations(queries *db.Queries, ctx context.Context) ([]Customer, []Location, error) {
+
+	customers := []Customer{}
+	locations := []Location{}
+
+	dbCustomers, err := queries.ListCustomers(ctx)
+	if err != nil {
+		return customers, locations, err
+	}
+
+	for _, c := range dbCustomers {
+		customers = append(customers, Customer(c))
+	}
+
+	dbLocations, err := queries.ListLocations(ctx)
+	if err != nil {
+		return customers, locations, err
+	}
+
+	for _, l := range dbLocations {
+		locations = append(locations, Location(l))
+	}
+
+	return customers, locations, nil
 
 }
 
@@ -272,11 +306,11 @@ func hasNotesError(_ string) bool {
 }
 
 // reliaistically would likely validate more
-func validateVisit(r *http.Request) (VisitVM, error) {
+func validateVisit(r *http.Request) (VisitTemplateData, error) {
 
 	godump.Dump(r.Form)
 
-	vm := VisitVM{}
+	vm := VisitTemplateData{}
 
 	// cid, err := strconv.ParseInt(r.FormValue("customer_id"), 10, 64)
 	// if err != nil {
@@ -345,7 +379,7 @@ func validateUpload(file io.ReadSeeker) (string, string, error) {
 	return mimeType, ".jpg", nil
 }
 
-type VisitVM struct {
+type VisitTemplateData struct {
 	Date         string
 	Time         string
 	Duration     string
@@ -359,7 +393,7 @@ type VisitVM struct {
 	VisitVMErrors
 }
 
-func (v VisitVM) HasErrors() bool {
+func (v VisitTemplateData) HasErrors() bool {
 	if v.HasDateError || v.HasTimeError {
 		return true
 	}
@@ -370,4 +404,21 @@ type VisitVMErrors struct {
 	HasTimeError  bool
 	HasDateError  bool
 	HasNotesError bool
+}
+
+type Customer struct {
+	ID   int64
+	Name string
+}
+
+type Location struct {
+	ID         int64
+	Name       string
+	CustomerID int64
+}
+
+type VisitByEmployee struct {
+	VisitID      int64
+	EmployeeName string
+	LocationName string
 }

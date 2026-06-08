@@ -47,8 +47,8 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 			ctx := r.Context()
+			vbe, err := getVisitsByEmployee(queries, ctx, 1)
 
-			vbe, err := queries.GetVisitsByEmployee(ctx, 1)
 			if err != nil {
 				errorHandler(w, r, err.Error())
 				return
@@ -97,7 +97,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 				ctx := r.Context()
 
-				vid, ok := pathValueAsIntOrErr(w, r, "visit_id")
+				vid, ok := requireIDParam(w, r, "visit_id")
 				if !ok {
 					return
 				}
@@ -123,23 +123,28 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 			})
 			r.Get("/step-1/", func(w http.ResponseWriter, r *http.Request) {
 
-				ok, customers, _ := getCustomersAndLocations(queries, w, r)
-				if !ok {
+				ctx := r.Context()
+
+				customers, _, err := getCustomersAndLocations(queries, ctx)
+				if err != nil {
+					errorHandler(w, r, err.Error())
 					return
 				}
+
 				ChooseCustomerTemplate(customers).Render(r.Context(), w)
 			})
 			r.Post("/step-1/", func(w http.ResponseWriter, r *http.Request) {
 
 				ctx := r.Context()
-				customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
+				customerId, ok := requireIDFormField(w, r, "customer_id")
 				if !ok {
 					return
 				}
 
 				if customerId == 0 {
-					ok, customers, _ := getCustomersAndLocations(queries, w, r)
-					if !ok {
+					customers, _, err := getCustomersAndLocations(queries, ctx)
+					if err != nil {
+						errorHandler(w, r, err.Error())
 						return
 					}
 					ChooseCustomerTemplate(customers).Render(ctx, w)
@@ -159,8 +164,9 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				ok, _, locations := getCustomersAndLocations(queries, w, r)
-				if !ok {
+				_, locations, err := getCustomersAndLocations(queries, ctx)
+				if err != nil {
+					errorHandler(w, r, err.Error())
 					return
 				}
 
@@ -169,15 +175,15 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				customer, err := queries.GetCustomerById(ctx, customerID)
+				customer, err := getCustomerByID(queries, ctx, customerID)
 
 				if err != nil {
 					errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 					return
 				}
 
-				filteredLocations := func(locations []db.Location, customerId int64) []db.Location {
-					filtered := make([]db.Location, 0, len(locations))
+				filteredLocations := func(locations []Location, customerId int64) []Location {
+					filtered := make([]Location, 0, len(locations))
 					for _, loc := range locations {
 						if loc.CustomerID == customerId {
 							filtered = append(filtered, loc)
@@ -190,7 +196,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 			})
 			r.Post("/step-2/", func(w http.ResponseWriter, r *http.Request) {
 
-				customerId, ok := formValueAsIntOrErr(w, r, "customer_id")
+				customerId, ok := requireIDFormField(w, r, "customer_id")
 				if !ok {
 					return
 				}
@@ -200,7 +206,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				locationId, ok := formValueAsIntOrErr(w, r, "location_id")
+				locationId, ok := requireIDFormField(w, r, "location_id")
 				if !ok {
 					return
 				}
@@ -230,7 +236,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 						return
 					}
 
-					vm := VisitVM{
+					vm := VisitTemplateData{
 						Date:          time.Now().Format("2006-01-02"),
 						Duration:      "60",
 						CustomerName:  loc.CustomerName,
@@ -356,42 +362,33 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 	}
 }
 
-func pathValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
-
-	formVal := r.PathValue(key)
-
-	if formVal == "" {
-		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %s on page %v", key, r.URL.Path))
-		return 0, false
-	}
-
-	val, err := strconv.ParseInt(formVal, 10, 64)
+func requireNonZeroInt64(value string, key string, w http.ResponseWriter, r *http.Request) (int64, bool) {
+	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		errorHandler(w, r, fmt.Sprintf("http: incorrect path value %v, should be numeric - on page %v", formVal, r.URL.Path))
+		errorHandler(w, r, err.Error(), http.StatusBadRequest)
 		return 0, false
 	}
 
-	return val, true
+	if v == 0 {
+		errorHandler(
+			w,
+			r,
+			fmt.Sprintf("key '%s' must be a non-zero integer", key),
+			http.StatusBadRequest,
+		)
+		return 0, false
+	}
 
+	return v, true
 }
 
-func formValueAsIntOrErr(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+func requireIDParam(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+	return requireNonZeroInt64(chi.URLParam(r, key), key, w, r)
+}
 
+func requireIDFormField(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
 	formVal := r.FormValue(key)
-
-	if formVal == "" {
-		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %s on page %v", key, r.URL.Path))
-		return 0, false
-	}
-
-	val, err := strconv.ParseInt(formVal, 10, 64)
-	if err != nil {
-		errorHandler(w, r, fmt.Sprintf("http: incorrect form value %v, should be numeric - on page %v", formVal, r.URL.Path))
-		return 0, false
-	}
-
-	return val, true
-
+	return requireNonZeroInt64(formVal, key, w, r)
 }
 
 func parseMultipart(r *http.Request) (*http.Request, error) {

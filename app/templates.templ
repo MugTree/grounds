@@ -66,6 +66,7 @@ templ LoginLayoutTemplate() {
 	</html>
 }
 
+// ugly names are from sqlc
 templ IndexPageTemplate(visits []db.GetVisitsByEmployeeRow, message string) {
 	@LayoutTemplate() {
 		<section>

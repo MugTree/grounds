@@ -47,7 +47,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 			ctx := r.Context()
-			vbe, err := getVisitsByEmployee(queries, ctx, 1)
+			vbe, err := queries.GetVisitsByEmployee(ctx, 1)
 
 			if err != nil {
 				errorHandler(w, r, err.Error())
@@ -102,7 +102,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				detail, err := getVisitDetailsByID(queries, ctx, vid)
+				detail, err := queries.GetVisitById(ctx, vid)
 				if err != nil {
 					errorHandler(w, r, err.Error(), 500)
 					return
@@ -175,15 +175,15 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				customer, err := getCustomerByID(queries, ctx, customerID)
+				customer, err := queries.GetCustomerById(ctx, customerID)
 
 				if err != nil {
 					errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 					return
 				}
 
-				filteredLocations := func(locations []Location, customerId int64) []Location {
-					filtered := make([]Location, 0, len(locations))
+				filteredLocations := func(locations []db.Location, customerId int64) []db.Location {
+					filtered := make([]db.Location, 0, len(locations))
 					for _, loc := range locations {
 						if loc.CustomerID == customerId {
 							filtered = append(filtered, loc)
@@ -230,7 +230,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 						return
 					}
 
-					customerLoc, err := getCustomerLocationByID(queries, ctx, locationID) //selectLocationData(r.Context(), db, locationId)
+					customerLoc, err := queries.GetLocationById(ctx, locationID) //selectLocationData(r.Context(), db, locationId)
 					if err != nil {
 						errorHandler(w, r, err.Error())
 						return

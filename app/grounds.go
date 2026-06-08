@@ -24,83 +24,18 @@ import (
 	"golang.org/x/image/draw"
 )
 
-type Customer = db.Customer
-
-func getCustomerByID(queries *db.Queries, ctx context.Context, customerID int64) (Customer, error) {
-
-	cust, err := queries.GetCustomerById(ctx, customerID)
-	if err != nil {
-		return Customer{}, err
-	}
-
-	return cust, nil
-}
-
-type CustomerLocation = db.GetLocationByIdRow
-
-func getCustomerLocationByID(queries *db.Queries, ctx context.Context, locationID int64) (CustomerLocation, error) {
-
-	cust, err := queries.GetLocationById(ctx, locationID)
-	if err != nil {
-		return CustomerLocation{}, err
-	}
-
-	return CustomerLocation(cust), nil
-}
-
-type VisitDetail = db.GetVisitByIdRow
-
-func getVisitDetailsByID(queries *db.Queries, ctx context.Context, visitID int64) (VisitDetail, error) {
-
-	cust, err := queries.GetVisitById(ctx, visitID)
-	if err != nil {
-		return VisitDetail{}, err
-	}
-
-	return VisitDetail(cust), nil
-}
-
 type VisitByEmployee = db.GetVisitsByEmployeeRow
 
-func getVisitsByEmployee(queries *db.Queries, ctx context.Context, employeeID int64) ([]VisitByEmployee, error) {
+func getCustomersAndLocations(queries *db.Queries, ctx context.Context) ([]db.Customer, []db.Location, error) {
 
-	visits := []VisitByEmployee{}
-
-	vbe, err := queries.GetVisitsByEmployee(ctx, employeeID)
+	customers, err := queries.ListCustomers(ctx)
 	if err != nil {
-		return visits, err
+		return []db.Customer{}, []db.Location{}, err
 	}
 
-	for _, v := range vbe {
-		visits = append(visits, VisitByEmployee(v))
-	}
-	return visits, nil
-
-}
-
-type Location = db.Location
-
-func getCustomersAndLocations(queries *db.Queries, ctx context.Context) ([]Customer, []Location, error) {
-
-	customers := []Customer{}
-	locations := []Location{}
-
-	dbCustomers, err := queries.ListCustomers(ctx)
+	locations, err := queries.ListLocations(ctx)
 	if err != nil {
-		return customers, locations, err
-	}
-
-	for _, c := range dbCustomers {
-		customers = append(customers, Customer(c))
-	}
-
-	dbLocations, err := queries.ListLocations(ctx)
-	if err != nil {
-		return customers, locations, err
-	}
-
-	for _, l := range dbLocations {
-		locations = append(locations, Location(l))
+		return []db.Customer{}, []db.Location{}, err
 	}
 
 	return customers, locations, nil

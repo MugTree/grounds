@@ -34,6 +34,16 @@ func getCustomerByID(queries *db.Queries, ctx context.Context, customerID int64)
 	return Customer(cust), nil
 }
 
+func getVisitDetailsByID(queries *db.Queries, ctx context.Context, visitID int64) (VisitDetail, error) {
+
+	cust, err := queries.GetVisitById(ctx, visitID)
+	if err != nil {
+		return VisitDetail{}, err
+	}
+
+	return VisitDetail(cust), nil
+}
+
 func getVisitsByEmployee(queries *db.Queries, ctx context.Context, employeeID int64) ([]VisitByEmployee, error) {
 
 	visits := []VisitByEmployee{}
@@ -421,4 +431,12 @@ type VisitByEmployee struct {
 	VisitID      int64
 	EmployeeName string
 	LocationName string
+}
+
+type VisitDetail struct {
+	VisitDatetime string
+	VisitDuration int64
+	CustomerName  string
+	LocationName  string
+	EmployeeName  string
 }

@@ -102,22 +102,22 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				d, err := queries.GetVisitById(ctx, vid)
+				detail, err := getVisitDetailsByID(queries, ctx, vid)
 				if err != nil {
 					errorHandler(w, r, err.Error(), 500)
 					return
 				}
 
-				t, err := time.Parse(time.RFC3339, d.VisitDatetime)
+				t, err := time.Parse(time.RFC3339, detail.VisitDatetime)
 				if err != nil {
 					errorHandler(w, r, err.Error(), 500)
 					return
 				}
 
 				ViewVisitTemplate(
-					d.CustomerName,
-					d.LocationName,
-					fmt.Sprintf("%v minutes", d.VisitDuration),
+					detail.CustomerName,
+					detail.LocationName,
+					fmt.Sprintf("%v minutes", detail.VisitDuration),
 					t.Format("Mon Jan _2"),
 				).Render(ctx, w)
 			})

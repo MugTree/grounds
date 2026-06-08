@@ -219,18 +219,18 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 					ctx := r.Context()
 
-					locationId := session.GetInt64(ctx, "location_id")
-					if locationId == 0 {
+					locationID := session.GetInt64(ctx, "location_id")
+					if locationID == 0 {
 						errorHandler(w, r, "http: error reading location_id from cookie path")
 						return
 					}
 
-					if locationId == 0 {
+					if locationID == 0 {
 						errorHandler(w, r, "http: location_id is 0 this shouldn't happen")
 						return
 					}
 
-					loc, err := queries.GetLocationById(ctx, locationId) //selectLocationData(r.Context(), db, locationId)
+					customerLoc, err := getCustomerLocationByID(queries, ctx, locationID) //selectLocationData(r.Context(), db, locationId)
 					if err != nil {
 						errorHandler(w, r, err.Error())
 						return
@@ -239,10 +239,10 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					vm := VisitTemplateData{
 						Date:          time.Now().Format("2006-01-02"),
 						Duration:      "60",
-						CustomerName:  loc.CustomerName,
-						LocationName:  loc.LocationName,
-						CustomerId:    loc.CustomerID,
-						LocationId:    loc.LocationID,
+						CustomerName:  customerLoc.CustomerName,
+						LocationName:  customerLoc.LocationName,
+						CustomerId:    customerLoc.CustomerID,
+						LocationId:    customerLoc.LocationID,
 						IsSubmission:  false,
 						VisitVMErrors: VisitVMErrors{HasTimeError: false, HasDateError: false},
 					}

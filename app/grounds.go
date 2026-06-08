@@ -24,6 +24,8 @@ import (
 	"golang.org/x/image/draw"
 )
 
+type Customer = db.Customer
+
 func getCustomerByID(queries *db.Queries, ctx context.Context, customerID int64) (Customer, error) {
 
 	cust, err := queries.GetCustomerById(ctx, customerID)
@@ -31,8 +33,22 @@ func getCustomerByID(queries *db.Queries, ctx context.Context, customerID int64)
 		return Customer{}, err
 	}
 
-	return Customer(cust), nil
+	return cust, nil
 }
+
+type CustomerLocation = db.GetLocationByIdRow
+
+func getCustomerLocationByID(queries *db.Queries, ctx context.Context, locationID int64) (CustomerLocation, error) {
+
+	cust, err := queries.GetLocationById(ctx, locationID)
+	if err != nil {
+		return CustomerLocation{}, err
+	}
+
+	return CustomerLocation(cust), nil
+}
+
+type VisitDetail = db.GetVisitByIdRow
 
 func getVisitDetailsByID(queries *db.Queries, ctx context.Context, visitID int64) (VisitDetail, error) {
 
@@ -43,6 +59,8 @@ func getVisitDetailsByID(queries *db.Queries, ctx context.Context, visitID int64
 
 	return VisitDetail(cust), nil
 }
+
+type VisitByEmployee = db.GetVisitsByEmployeeRow
 
 func getVisitsByEmployee(queries *db.Queries, ctx context.Context, employeeID int64) ([]VisitByEmployee, error) {
 
@@ -59,6 +77,8 @@ func getVisitsByEmployee(queries *db.Queries, ctx context.Context, employeeID in
 	return visits, nil
 
 }
+
+type Location = db.Location
 
 func getCustomersAndLocations(queries *db.Queries, ctx context.Context) ([]Customer, []Location, error) {
 
@@ -414,29 +434,4 @@ type VisitVMErrors struct {
 	HasTimeError  bool
 	HasDateError  bool
 	HasNotesError bool
-}
-
-type Customer struct {
-	ID   int64
-	Name string
-}
-
-type Location struct {
-	ID         int64
-	Name       string
-	CustomerID int64
-}
-
-type VisitByEmployee struct {
-	VisitID      int64
-	EmployeeName string
-	LocationName string
-}
-
-type VisitDetail struct {
-	VisitDatetime string
-	VisitDuration int64
-	CustomerName  string
-	LocationName  string
-	EmployeeName  string
 }

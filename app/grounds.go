@@ -23,7 +23,7 @@ import (
 	"golang.org/x/image/draw"
 )
 
-func getHomepageData(queries *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
+func getCustomersAndLocations(queries *db.Queries, w http.ResponseWriter, r *http.Request) (bool, []db.Customer, []db.Location) {
 
 	ctx := r.Context()
 
@@ -343,4 +343,31 @@ func validateUpload(file io.ReadSeeker) (string, string, error) {
 	}
 
 	return mimeType, ".jpg", nil
+}
+
+type VisitVM struct {
+	Date         string
+	Time         string
+	Duration     string
+	Notes        string
+	CustomerId   int64
+	CustomerName string
+	LocationName string
+	LocationId   int64
+	IsComplete   bool
+	IsSubmission bool
+	VisitVMErrors
+}
+
+func (v VisitVM) HasErrors() bool {
+	if v.HasDateError || v.HasTimeError {
+		return true
+	}
+	return false
+}
+
+type VisitVMErrors struct {
+	HasTimeError  bool
+	HasDateError  bool
+	HasNotesError bool
 }

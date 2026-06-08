@@ -25,6 +25,18 @@ import (
 //go:embed public/img/*.png
 var staticFS embed.FS
 
+type dateSignals struct {
+	VisitDate string `json:"visit_date"`
+}
+
+type timeSignals struct {
+	VisitTime string `json:"visit_time"`
+}
+
+type notesSignals struct {
+	VisitNotes string `json:"visit_notes"`
+}
+
 func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, session *scs.SessionManager, user string, password string) chi.Router {
 
 	r := chi.NewRouter()
@@ -111,7 +123,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 			})
 			r.Get("/step-1/", func(w http.ResponseWriter, r *http.Request) {
 
-				ok, customers, _ := getHomepageData(queries, w, r)
+				ok, customers, _ := getCustomersAndLocations(queries, w, r)
 				if !ok {
 					return
 				}
@@ -126,7 +138,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 				}
 
 				if customerId == 0 {
-					ok, customers, _ := getHomepageData(queries, w, r)
+					ok, customers, _ := getCustomersAndLocations(queries, w, r)
 					if !ok {
 						return
 					}
@@ -147,7 +159,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 					return
 				}
 
-				ok, _, locations := getHomepageData(queries, w, r)
+				ok, _, locations := getCustomersAndLocations(queries, w, r)
 				if !ok {
 					return
 				}

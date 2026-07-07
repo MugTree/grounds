@@ -37,20 +37,20 @@ type notesSignals struct {
 	VisitNotes string `json:"visit_notes"`
 }
 
-func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, session *scs.SessionManager, user string, password string) chi.Router {
+func HttpSetupServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, session *scs.SessionManager, user string, password string) chi.Router {
 
 	r := chi.NewRouter()
 	r.Use(session.LoadAndSave)
-	r.Handle("/public/*", neuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
+	r.Handle("/public/*", httpNeuterDirectoryHandler(http.FileServer(http.FS(staticFS))))
 	r.Group(func(site chi.Router) {
-		site.Use(basicAuthHandler(user, password))
+		site.Use(httpBasicAuthHandler(user, password))
 		r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 
 			ctx := r.Context()
 			vbe, err := queries.GetVisitsByEmployee(ctx, 1)
 
 			if err != nil {
-				errorHandler(w, r, err.Error())
+				httpErrorHandler(w, r, err.Error())
 				return
 			}
 
@@ -87,7 +87,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 				fmt.Println(name, " ", password)
 
 			default:
-				errorHandler(w, r, fmt.Sprintf("%v - method not supported", r.Method), 404)
+				httpErrorHandler(w, r, fmt.Sprintf("%v - method not supported", r.Method), 404)
 			}
 
 		})
@@ -97,20 +97,20 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 				ctx := r.Context()
 
-				vid, ok := requireIDParam(w, r, "visit_id")
+				vid, ok := httpRequireIDParam(w, r, "visit_id")
 				if !ok {
 					return
 				}
 
 				detail, err := queries.GetVisitById(ctx, vid)
 				if err != nil {
-					errorHandler(w, r, err.Error(), 500)
+					httpErrorHandler(w, r, err.Error(), 500)
 					return
 				}
 
 				t, err := time.Parse(time.RFC3339, detail.VisitDatetime)
 				if err != nil {
-					errorHandler(w, r, err.Error(), 500)
+					httpErrorHandler(w, r, err.Error(), 500)
 					return
 				}
 
@@ -125,9 +125,9 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 				ctx := r.Context()
 
-				customers, _, err := getCustomersAndLocations(queries, ctx)
+				customers, _, err := groundsGetCustomersAndLocations(queries, ctx)
 				if err != nil {
-					errorHandler(w, r, err.Error())
+					httpErrorHandler(w, r, err.Error())
 					return
 				}
 
@@ -136,15 +136,15 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 			r.Post("/step-1/", func(w http.ResponseWriter, r *http.Request) {
 
 				ctx := r.Context()
-				customerId, ok := requireIDFormField(w, r, "customer_id")
+				customerId, ok := httpRequireIDFormField(w, r, "customer_id")
 				if !ok {
 					return
 				}
 
 				if customerId == 0 {
-					customers, _, err := getCustomersAndLocations(queries, ctx)
+					customers, _, err := groundsGetCustomersAndLocations(queries, ctx)
 					if err != nil {
-						errorHandler(w, r, err.Error())
+						httpErrorHandler(w, r, err.Error())
 						return
 					}
 					ChooseCustomerTemplate(customers).Render(ctx, w)
@@ -160,25 +160,25 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 				customerID := session.GetInt64(ctx, "customer_id")
 				if customerID == 0 {
-					errorHandler(w, r, "http: error reading customer_id from cookie path")
+					httpErrorHandler(w, r, "http: error reading customer_id from cookie path")
 					return
 				}
 
-				_, locations, err := getCustomersAndLocations(queries, ctx)
+				_, locations, err := groundsGetCustomersAndLocations(queries, ctx)
 				if err != nil {
-					errorHandler(w, r, err.Error())
+					httpErrorHandler(w, r, err.Error())
 					return
 				}
 
 				if customerID == 0 {
-					errorHandler(w, r, "http: tampered request?")
+					httpErrorHandler(w, r, "http: tampered request?")
 					return
 				}
 
 				customer, err := queries.GetCustomerById(ctx, customerID)
 
 				if err != nil {
-					errorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
+					httpErrorHandler(w, r, fmt.Sprintf("sql: error getting customer by id - %v", err))
 					return
 				}
 
@@ -196,17 +196,17 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 			})
 			r.Post("/step-2/", func(w http.ResponseWriter, r *http.Request) {
 
-				customerId, ok := requireIDFormField(w, r, "customer_id")
+				customerId, ok := httpRequireIDFormField(w, r, "customer_id")
 				if !ok {
 					return
 				}
 
 				if customerId == 0 {
-					errorHandler(w, r, "http: customer id not being set is 0")
+					httpErrorHandler(w, r, "http: customer id not being set is 0")
 					return
 				}
 
-				locationId, ok := requireIDFormField(w, r, "location_id")
+				locationId, ok := httpRequireIDFormField(w, r, "location_id")
 				if !ok {
 					return
 				}
@@ -221,18 +221,18 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 					locationID := session.GetInt64(ctx, "location_id")
 					if locationID == 0 {
-						errorHandler(w, r, "http: error reading location_id from cookie path")
+						httpErrorHandler(w, r, "http: error reading location_id from cookie path")
 						return
 					}
 
 					if locationID == 0 {
-						errorHandler(w, r, "http: location_id is 0 this shouldn't happen")
+						httpErrorHandler(w, r, "http: location_id is 0 this shouldn't happen")
 						return
 					}
 
 					customerLoc, err := queries.GetLocationById(ctx, locationID) //selectLocationData(r.Context(), db, locationId)
 					if err != nil {
-						errorHandler(w, r, err.Error())
+						httpErrorHandler(w, r, err.Error())
 						return
 					}
 
@@ -253,15 +253,15 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 
 					ctx := r.Context()
 
-					r, err := parseMultipart(r)
+					r, err := httpParseMultipart(r)
 					if err != nil {
-						errorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
+						httpErrorHandler(w, r, fmt.Sprintf("http: issue parsing multipart form - %v", err), 500)
 						return
 					}
 
-					vm, err := validateVisit(r)
+					vm, err := groundsValidateVisit(r)
 					if err != nil {
-						errorHandler(w, r, err.Error())
+						httpErrorHandler(w, r, err.Error())
 						return
 					}
 
@@ -270,9 +270,9 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 						return
 					}
 
-					visitId, err := logVisitData(queries, sqldb, r, uploadsDir)
+					visitId, err := groundsLogVisitData(queries, sqldb, r, uploadsDir)
 					if err != nil {
-						errorHandler(w, r, err.Error())
+						httpErrorHandler(w, r, err.Error())
 						return
 					}
 
@@ -284,21 +284,21 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 				r.Post("/validate-date", func(w http.ResponseWriter, r *http.Request) {
 					ds := dateSignals{}
 					datastar.ReadSignals(r, &ds)
-					dateError := hasDateError(ds.VisitDate)
+					dateError := _hasDateError(ds.VisitDate)
 					sse := datastar.NewSSE(w, r)
 					sse.PatchElementTempl(VisitDateInputTemplate(true, dateError))
 				})
 				r.Post("/validate-notes", func(w http.ResponseWriter, r *http.Request) {
 					ns := notesSignals{}
 					datastar.ReadSignals(r, &ns)
-					notesError := hasNotesError(ns.VisitNotes)
+					notesError := _hasNotesError(ns.VisitNotes)
 					sse := datastar.NewSSE(w, r)
 					sse.PatchElementTempl(VisitNotesInputTemplate(true, notesError))
 				})
 				r.Post("/validate-time", func(w http.ResponseWriter, r *http.Request) {
 					ts := timeSignals{}
 					datastar.ReadSignals(r, &ts)
-					timeError := hasTimeError(ts.VisitTime)
+					timeError := _hasTimeError(ts.VisitTime)
 					sse := datastar.NewSSE(w, r)
 					sse.PatchElementTempl(VisitTimeInputTemplate(true, timeError))
 				})
@@ -310,7 +310,7 @@ func SetupHttpServer(queries *db.Queries, sqldb *sql.DB, uploadsDir string, sess
 	return r
 }
 
-func errorHandler(w http.ResponseWriter, r *http.Request, msg string, statusCode ...int) {
+func httpErrorHandler(w http.ResponseWriter, r *http.Request, msg string, statusCode ...int) {
 	status := 500
 	if len(statusCode) > 0 {
 		status = statusCode[0]
@@ -325,7 +325,7 @@ func errorHandler(w http.ResponseWriter, r *http.Request, msg string, statusCode
 	ErrorPageTemplate().Render(r.Context(), w)
 }
 
-func neuterDirectoryHandler(next http.Handler) http.Handler {
+func httpNeuterDirectoryHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/") {
 			http.NotFound(w, r)
@@ -336,7 +336,7 @@ func neuterDirectoryHandler(next http.Handler) http.Handler {
 	})
 }
 
-func basicAuthHandler(user string, user_password string) func(http.Handler) http.Handler {
+func httpBasicAuthHandler(user string, user_password string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			username, password, ok := r.BasicAuth()
@@ -362,15 +362,15 @@ func basicAuthHandler(user string, user_password string) func(http.Handler) http
 	}
 }
 
-func requireNonZeroInt64(value string, key string, w http.ResponseWriter, r *http.Request) (int64, bool) {
+func httpRequireNonZeroInt64(value string, key string, w http.ResponseWriter, r *http.Request) (int64, bool) {
 	v, err := strconv.ParseInt(value, 10, 64)
 	if err != nil {
-		errorHandler(w, r, err.Error(), http.StatusBadRequest)
+		httpErrorHandler(w, r, err.Error(), http.StatusBadRequest)
 		return 0, false
 	}
 
 	if v == 0 {
-		errorHandler(
+		httpErrorHandler(
 			w,
 			r,
 			fmt.Sprintf("key '%s' must be a non-zero integer", key),
@@ -382,16 +382,16 @@ func requireNonZeroInt64(value string, key string, w http.ResponseWriter, r *htt
 	return v, true
 }
 
-func requireIDParam(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
-	return requireNonZeroInt64(chi.URLParam(r, key), key, w, r)
+func httpRequireIDParam(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+	return httpRequireNonZeroInt64(chi.URLParam(r, key), key, w, r)
 }
 
-func requireIDFormField(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
+func httpRequireIDFormField(w http.ResponseWriter, r *http.Request, key string) (int64, bool) {
 	formVal := r.FormValue(key)
-	return requireNonZeroInt64(formVal, key, w, r)
+	return httpRequireNonZeroInt64(formVal, key, w, r)
 }
 
-func parseMultipart(r *http.Request) (*http.Request, error) {
+func httpParseMultipart(r *http.Request) (*http.Request, error) {
 
 	ct := r.Header.Get("Content-Type")
 	if strings.HasPrefix(ct, "multipart/form-data") {
